@@ -13,12 +13,12 @@ const {
     getSystemStats,
     getTestimonials,
 } = require("../controllers/adminController");
-const { sendTestMailHandler } = require("../controllers/smsController");
+// const { sendTestMailHandler } = require("../controllers/smsController");
 
 router.route("/setadmin").post(setAdmin);
 router.route("/admin/auth").post(adminAuth);
 router.route("/admin/details").post(adminDetails);
-router.route("/admin/mail/test").post(sendTestMailHandler);
+// router.route("/admin/mail/test").post(sendTestMailHandler); // TODO: Implement sendTestMailHandler
 router.route("/admin/users").get(getAllUsers);
 router.route("/admin/users/:id").delete(deleteUser);
 router.route("/admin/events").get(getAllEvents);
