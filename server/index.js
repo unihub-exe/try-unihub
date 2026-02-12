@@ -172,27 +172,27 @@ app.post("/upload/image", upload.single("file"), (req, res) => {
 
 // Serve uploaded files securely
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
-            setHeaders: (res) => {
-                res.setHeader("X-Content-Type-Options", "nosniff");
-                res.setHeader("Cache-Control", "public, max-age=31536000");
-            }
-        ));
+    setHeaders: (res) => {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("Cache-Control", "public, max-age=31536000");
+    }
+}));
 
-        // Serve static files with security headers
-        app.use(express.static(path.join(__dirname, "../public"), {
-            setHeaders: (res) => {
-                res.setHeader("X-Content-Type-Options", "nosniff");
-                res.setHeader("X-Frame-Options", "SAMEORIGIN");
-                res.setHeader("X-XSS-Protection", "1; mode=block");
-            }
-        }));
+// Serve static files with security headers
+app.use(express.static(path.join(__dirname, "../public"), {
+    setHeaders: (res) => {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
+        res.setHeader("X-XSS-Protection", "1; mode=block");
+    }
+}));
 
-        // Error Handling Middleware
-        app.use((err, req, res, next) => {
-            console.error("Server Error:", err);
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error("Server Error:", err);
 
-            // Security: Don't leak stack traces in production
-            const isDevelopment = process.env.NODE_ENV === "development";
+    // Security: Don't leak stack traces in production
+    const isDevelopment = process.env.NODE_ENV === "development";
 
             res.status(err.status || 500).json({
                 msg: isDevelopment ? err.message : "Internal Server Error",
