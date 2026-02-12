@@ -60,9 +60,6 @@ export default function App({ Component, pageProps }) {
         meta name = "twitter:site"
         content = "@unihub" / >
         <
-        link rel = "preconnect"
-        href = { process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000" }
-        /> <
         title > UniHub - University Event Platform < /title> <
         /Head> <
         ServiceWorkerRegister / >
