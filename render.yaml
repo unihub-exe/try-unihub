@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: invite-server
+    env: node
+    region: singapore
+    plan: free
+    branch: main
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGO_ATLAS_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_MAILER_USER
+        sync: false
+      - key: NODE_MAILER_PASS
+        sync: false
+      - key: STRIPE_KEY
+        sync: false
+      - key: CLIENT_BASE_URL
+        sync: false
+      - key: MAILTO
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

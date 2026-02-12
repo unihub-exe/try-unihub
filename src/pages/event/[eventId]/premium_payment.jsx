@@ -1,0 +1,172 @@
+import NavBar from "@/components/UserNavBar";
+import { getUserToken } from "@/utils/getUserToken";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import StripeCheckout from "react-stripe-checkout";
+import { FiStar, FiCheck } from "react-icons/fi";
+import { API_URL } from "@/utils/config";
+
+export default function PremiumPayment() {
+    const router = useRouter();
+    const event_id = router.query.eventId;
+    const [event, setEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const token = getUserToken();
+        if (token) setUser(token);
+    }, []);
+
+    useEffect(() => {
+        if (!event_id) return;
+
+        const fetchEvent = async () => {
+            try {
+                const response = await fetch(`${API_URL}/getevent`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ event_id }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setEvent(data);
+                }
+            } catch (error) {
+                console.error("Error fetching event:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvent();
+    }, [event_id]);
+
+    const handleToken = async (token, addresses) => {
+        try {
+            const response = await fetch(`${API_URL}/payment`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    token,
+                    product: {
+                        name: `Premium Upgrade - ${event.name}`,
+                        price: 10, // Fixed price for premium
+                    },
+                    user: { user_id: user },
+                    event: { event_id },
+                    isPremiumUpgrade: true
+                }),
+            });
+            const data = await response.json();
+            if (data.status === "success") {
+                alert("Payment Successful! Your event is now Premium.");
+                router.push(`/event/${event_id}/manage`);
+            } else {
+                alert("Payment failed. Please try again.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred.");
+        }
+    };
+
+    if (loading) return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="animate-pulse flex flex-col items-center">
+                <div className="h-12 w-12 border-4 border-[color:var(--secondary-color)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div className="h-4 w-32 bg-gray-200 rounded"></div>
+            </div>
+        </div>
+    );
+    if (!event) return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Event not found</h2>
+                <button onClick={() => router.back()} className="text-[color:var(--secondary-color)] font-bold hover:underline">
+                    Go Back
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-gray-50 font-sans text-slate-900 pb-20">
+            <NavBar />
+            <div className="max-w-4xl mx-auto pt-24 px-4 pb-12">
+                <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden animate-fade-in-up">
+                    <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 p-10 text-white text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-full bg-white/10 opacity-20 bg-[url('/pattern.png')]"></div>
+                        <div className="relative z-10">
+                            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+                                <FiStar className="text-4xl fill-current" />
+                            </div>
+                            <h1 className="text-4xl font-black mb-3 tracking-tight">Upgrade to Premium</h1>
+                            <p className="text-lg opacity-90 font-medium max-w-xl mx-auto">Boost your event visibility, reach more attendees, and unlock exclusive features.</p>
+                        </div>
+                    </div>
+
+                    <div className="p-8 md:p-12">
+                        <div className="grid md:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                    Why go Premium?
+                                </h2>
+                                <ul className="space-y-4">
+                                    {[
+                                        "Top placement in search results",
+                                        "Highlighted 'Premium' badge",
+                                        "Featured on the home page",
+                                        "Custom email notifications to followers",
+                                        "Priority support from our team"
+                                    ].map((benefit, i) => (
+                                        <li key={i} className="flex items-start gap-3 text-gray-700">
+                                            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+                                                <FiCheck size={14} />
+                                            </div>
+                                            <span className="font-medium">{benefit}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 text-center relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                                
+                                <p className="text-gray-500 font-bold uppercase tracking-wider text-xs mb-2">One-time payment</p>
+                                <div className="text-6xl font-black text-gray-900 mb-8 tracking-tight">
+                                    $10<span className="text-2xl text-gray-400 font-bold">.00</span>
+                                </div>
+                                
+                                <div className="mb-8 p-4 bg-white rounded-2xl border border-gray-200 text-left shadow-sm flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">🎉</div>
+                                    <div className="overflow-hidden">
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Upgrading Event</p>
+                                        <p className="font-bold text-gray-900 truncate text-lg leading-tight">{event.name}</p>
+                                    </div>
+                                </div>
+
+                                <StripeCheckout
+                                    stripeKey={process.env.NEXT_PUBLIC_STRIPE_KEY}
+                                    token={handleToken}
+                                    amount={1000} // $10.00 in cents
+                                    name={`Premium: ${event.name}`}
+                                    currency="USD"
+                                    email={user?.email}
+                                >
+                                    <button className="w-full py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-yellow-500/30 hover:shadow-xl hover:-translate-y-1 text-lg flex items-center justify-center gap-2">
+                                        <FiStar className="fill-current" /> Pay & Upgrade Now
+                                    </button>
+                                </StripeCheckout>
+                                <p className="text-xs text-gray-400 mt-4 font-medium flex items-center justify-center gap-1">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+                                    Secured by Stripe
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

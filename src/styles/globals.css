@@ -1,0 +1,229 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&family=Syne:wght@500;700&display=swap");
+/* @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap'); */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-base: "Inter", sans-serif;
+  --font-heading: "Poppins", sans-serif;
+
+  --primary-color: #f6f6f6;
+  --secondary-color: #2563eb;
+  --darker-secondary-color: #1d4ed8;
+  /* --darker-secondary-color: #ec816b; */
+  --white-color: #ffffff;
+  --gray-color: #242424;
+  --light-gray: #494949;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey;
+  border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  /* box-shadow: inset 0 0 5px grey;  */
+  background: var(--darker-secondary-color);
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+/* ::-webkit-scrollbar-thumb:hover {
+  background: var(--light-gray);
+} */
+
+* {
+  font-family: var(--font-base), sans-serif;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  scroll-behavior: smooth;
+  /* cursor: none; */
+}
+
+.button-with-icon {
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--darker-secondary-color);
+  font-family: var(--font-base), sans-serif;
+  letter-spacing: 1px;
+  padding: 0 12px;
+  text-align: center;
+  width: 140px;
+  height: 40px;
+  font-size: 14px;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-radius: 12px;
+  outline: none;
+  user-select: none;
+  cursor: pointer;
+  transform: translateY(0px);
+  position: relative;
+  box-shadow:
+    inset 0 30px 30px -15px rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 1px 20px rgba(0, 0, 0, 0),
+    0 3px 0 var(--darker-secondary-color),
+    0 3px 2px rgba(0, 0, 0, 0.2),
+    0 5px 10px rgba(0, 0, 0, 0.1),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+  background: var(--secondary-color);
+  color: white;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  transition: 150ms all ease-in-out;
+}
+
+.button-with-icon .icon {
+  margin-right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.5s ease-in-out;
+}
+
+.button-with-icon:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 16px 2px -15px rgba(0, 0, 0, 0),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 20px rgba(0, 0, 0, 0.1),
+    0 0 0 var(--darker-secondary-color),
+    0 0 0 2px rgba(255, 255, 255, 0.5),
+    0 0 0 rgba(0, 0, 0, 0),
+    0 0 0 rgba(0, 0, 0, 0);
+}
+
+.button-with-icon:hover .text {
+  transform: translateX(100px);
+}
+.button-with-icon:hover .icon {
+  transform: translate(35px);
+  scale: 1.2;
+}
+
+.text {
+  transition: all 0.5s ease-in-out;
+}
+
+@layer components {
+  .heading-font {
+    font-family: var(--font-heading), serif;
+  }
+  .hero-title {
+    font-family: "Syne", sans-serif;
+    font-weight: 700;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: center;
+  }
+  .subhead-syne {
+    font-family: "Syne", sans-serif;
+    font-weight: 500;
+    font-size: 48px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .filterInput {
+    @apply outline-none w-full bg-[color:var(--white-color)] rounded-lg border-b pl-4 py-3 lg:pl-6 lg:py-4 placeholder-black transition-all !shadow-md;
+  }
+  .adminDropDownInput {
+    @apply outline-none w-full bg-[color:var(--primary-color)] mt-1 rounded-lg border-b pl-4 py-3 lg:pl-4 lg:py-3 placeholder-black transition-all !shadow-md;
+  }
+}
+
+@layer utilities {
+  .rtl {
+    direction: rtl;
+  }
+}
+
+[x-cloak=""] {
+  display: none;
+}
+
+.comic_button {
+  background: #4e15fa;
+  color: white;
+  font-family: inherit;
+  padding: 0.6em 1.3em;
+  font-weight: 900;
+  font-size: 18px;
+  border: 3px solid black;
+  border-radius: 0.4em;
+  box-shadow: 0.2em 0.2em 0px 0px black;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.comic_button:hover {
+  transform: translate(-0.05em, -0.05em);
+  box-shadow: 0.25em 0.25em 0px 0px black;
+  color: black;
+}
+
+.comic_button:active {
+  transform: translate(0.05em, 0.05em);
+  box-shadow: 0.15em 0.15em 0px 0px black;
+}
+
+.bg-purple-dots {
+  background-image: radial-gradient(
+    var(--secondary-color) 2px,
+    transparent 2px
+  );
+  background-size: 20px 20px;
+}
+
+/* Custom Animations for Auth Pages */
+@keyframes fade-in-up {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out;
+}
+
+@keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+}
+.animate-blob {
+    animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+    animation-delay: 2s;
+}
+.animation-delay-4000 {
+    animation-delay: 4s;
+}
+
+.animate-spin-slow {
+    animation: spin 8s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

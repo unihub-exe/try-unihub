@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://invite-server-cykk.onrender.com"
+  },
+  "rewrites": [
+    {
+      "source": "/backend/:path*",
+      "destination": "https://invite-server-cykk.onrender.com/:path*"
+    }
+  ]
+}
