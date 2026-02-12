@@ -122,7 +122,49 @@ const userSchema = new mongoose.Schema({
                 default: "pending",
             },
         },
+        bankDetails: {
+            accountNumber: { type: String },
+            accountName: { type: String },
+            bankCode: { type: String },
+            bankName: { type: String },
+        }
     },
+    // Transaction history for regular users
+    transactions: [{
+        type: {
+            type: String,
+            enum: ["credit", "debit", "free", "refund"],
+            required: true
+        },
+        amount: { type: Number, default: 0 },
+        description: { type: String },
+        eventId: { type: String },
+        transactionId: { type: String },
+        paymentReference: { type: String },
+        status: {
+            type: String,
+            enum: ["pending", "completed", "failed"],
+            default: "completed"
+        },
+        date: { type: Date, default: Date.now }
+    }],
+    // Withdrawal history for organizers
+    withdrawals: [{
+        reference: { type: String },
+        amount: { type: Number },
+        recipientCode: { type: String },
+        accountNumber: { type: String },
+        bankCode: { type: String },
+        accountName: { type: String },
+        status: {
+            type: String,
+            enum: ["pending", "processing", "completed", "failed"],
+            default: "pending"
+        },
+        transferId: { type: String },
+        createdAt: { type: Date, default: Date.now },
+        completedAt: { type: Date }
+    }],
     refreshToken: {
         token: { type: String },
         expiresAt: { type: Date },
@@ -143,5 +185,11 @@ const userSchema = new mongoose.Schema({
         },
     }],
 }, { timestamps: true });
+
+// Indexes for better query performance
+userSchema.index({ "transactions.date": -1 });
+userSchema.index({ "withdrawals.createdAt": -1 });
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

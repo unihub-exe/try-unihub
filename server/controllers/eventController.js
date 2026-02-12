@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const { sendCheckInEmail } = require("../utils/emailService");
 
-const postEvent = async (req, res) => {
+const postEvent = async(req, res) => {
     const Name = req.body.name;
     const Venue = req.body.venue;
     const Date = req.body.date;
@@ -26,7 +26,7 @@ const postEvent = async (req, res) => {
     const Category = req.body.category;
     const TicketTypes = req.body.ticketTypes;
     const RegistrationQuestions = req.body.registrationQuestions;
-    
+
     // New fields
     const Visibility = req.body.visibility;
     const RequiresApproval = req.body.requiresApproval;
@@ -102,7 +102,7 @@ const postEvent = async (req, res) => {
         const repeatCount = req.body.repeatCount ? parseInt(req.body.repeatCount) : 0;
 
         if (repeatFrequency && repeatFrequency !== "none" && repeatCount > 1) {
-            const createRecurringEvents = async () => {
+            const createRecurringEvents = async() => {
                 // Parse initial date (assuming DD/MM/YYYY from client)
                 const [day, month, year] = Date.split('/').map(Number);
                 let currentDate = new Date(year, month - 1, day);
@@ -174,16 +174,10 @@ const postEvent = async (req, res) => {
                     };
 
                     if (adminId) {
-                        await Admin.updateOne(
-                            { admin_id: adminId },
-                            { $push: { eventCreated: eventData } }
-                        );
+                        await Admin.updateOne({ admin_id: adminId }, { $push: { eventCreated: eventData } });
                     }
                     if (userId) {
-                        await User.updateOne(
-                            { user_token: userId },
-                            { $push: { eventCreated: eventData } }
-                        );
+                        await User.updateOne({ user_token: userId }, { $push: { eventCreated: eventData } });
                     }
                 }
             };
@@ -195,9 +189,7 @@ const postEvent = async (req, res) => {
     }
 
     if (adminId) {
-        Admin.updateOne(
-            { admin_id: adminId },
-            {
+        Admin.updateOne({ admin_id: adminId }, {
                 $push: {
                     eventCreated: {
                         event_id: token,
@@ -207,14 +199,12 @@ const postEvent = async (req, res) => {
                         time: Time,
                         description: Desc,
                         price: Price,
-                        profile:
-                            Profile == null
-                                ? "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg"
-                                : Profile,
-                        cover:
-                            Cover == null
-                                ? "https://eventplanning24x7.files.wordpress.com/2018/04/events.png"
-                                : Cover,
+                        profile: Profile == null ?
+                            "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg" :
+                            Profile,
+                        cover: Cover == null ?
+                            "https://eventplanning24x7.files.wordpress.com/2018/04/events.png" :
+                            Cover,
                         organizer: organizerName,
                         category: Category,
                         address: Address,
@@ -223,7 +213,7 @@ const postEvent = async (req, res) => {
                     },
                 },
             },
-            function (err) {
+            function(err) {
                 if (err) {
                     console.log(err);
                 }
@@ -231,9 +221,7 @@ const postEvent = async (req, res) => {
         );
     }
     if (userId) {
-        User.updateOne(
-            { user_token: userId },
-            {
+        User.updateOne({ user_token: userId }, {
                 $push: {
                     eventCreated: {
                         event_id: token,
@@ -243,14 +231,12 @@ const postEvent = async (req, res) => {
                         time: Time,
                         description: Desc,
                         price: Price,
-                        profile:
-                            Profile == null
-                                ? "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg"
-                                : Profile,
-                        cover:
-                            Cover == null
-                                ? "https://eventplanning24x7.files.wordpress.com/2018/04/events.png"
-                                : Cover,
+                        profile: Profile == null ?
+                            "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg" :
+                            Profile,
+                        cover: Cover == null ?
+                            "https://eventplanning24x7.files.wordpress.com/2018/04/events.png" :
+                            Cover,
                         organizer: organizerName,
                         category: Category,
                         address: Address,
@@ -259,7 +245,7 @@ const postEvent = async (req, res) => {
                     },
                 },
             },
-            function (err) {
+            function(err) {
                 if (err) {
                     console.log(err);
                 }
@@ -270,7 +256,7 @@ const postEvent = async (req, res) => {
     res.status(200).send({ msg: "event created", event_id: token });
 };
 
-const updateEvent = async (req, res) => {
+const updateEvent = async(req, res) => {
     const eventId = req.body.event_id;
     const adminId = req.body.admin_id;
     const userId = req.body.user_token || req.body.user_id;
@@ -296,10 +282,12 @@ const updateEvent = async (req, res) => {
         "requiresApproval",
         "waitlistEnabled",
         "hideLocation",
+        "isPremium", // Allow premium status update after payment
     ];
     const payload = req.body.update || {};
     const toSet = {};
-    for (const k of allowed) if (payload[k] !== undefined) toSet[k] = payload[k];
+    for (const k of allowed)
+        if (payload[k] !== undefined) toSet[k] = payload[k];
     try {
         const ev = await Event.findOne({ event_id: eventId });
         if (!ev) return res.status(404).send({ msg: "Event not found" });
@@ -315,11 +303,11 @@ const updateEvent = async (req, res) => {
     }
 };
 
-const allEvents = async (req, res) => {
+const allEvents = async(req, res) => {
     try {
         const events = await Event.find({ visibility: { $ne: "private" } })
             .sort({ isPremium: -1, _id: -1 });
-        
+
         // Filter out past events
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -339,7 +327,7 @@ const allEvents = async (req, res) => {
     }
 };
 
-const getUserEvents = async (req, res) => {
+const getUserEvents = async(req, res) => {
     const userId = req.body.user_token || req.body.user_id;
     if (!userId) return res.status(400).send({ msg: "User ID required" });
 
@@ -363,9 +351,9 @@ const getUserEvents = async (req, res) => {
             if (!event.date) return;
             const parts = event.date.split('/');
             if (parts.length !== 3) return;
-            
+
             const eventDate = new Date(parts[2], parts[1] - 1, parts[0]);
-            
+
             if (eventDate < today) {
                 past.push(event);
             } else if (eventDate.getTime() === today.getTime()) {
@@ -382,14 +370,14 @@ const getUserEvents = async (req, res) => {
     }
 };
 
-const particularEvent = async (req, res) => {
+const particularEvent = async(req, res) => {
     const eventId = req.body.event_id;
     const userId = req.body.user_id || req.body.user_token; // Optional user context
 
     try {
         const events = await Event.find({ event_id: eventId });
         if (!events || events.length === 0) return res.status(404).send({ msg: "Event not found" });
-        
+
         let event = events[0].toObject();
 
         // Handle Hide Location logic
@@ -407,7 +395,7 @@ const particularEvent = async (req, res) => {
                 event.lng = null;
             }
         }
-        
+
         // Handle Registration Token Security
         if (event.registrationToken && event.registrationToken.trim() !== "") {
             event.hasRegistrationToken = true;
@@ -426,12 +414,12 @@ const particularEvent = async (req, res) => {
     }
 };
 
-const deleteEvent = async (req, res) => {
+const deleteEvent = async(req, res) => {
     const eventId = req.body.event_id;
     const adminId = req.body.admin_id;
     const userId = req.body.user_id;
 
-    Event.deleteOne({ event_id: eventId }, function (err) {
+    Event.deleteOne({ event_id: eventId }, function(err) {
         if (err) return handleError(err);
         else {
             console.log("Event deleted::events collection.");
@@ -440,10 +428,8 @@ const deleteEvent = async (req, res) => {
     });
 
     if (adminId) {
-        Admin.updateOne(
-            { admin_id: adminId },
-            { $pull: { eventCreated: { event_id: eventId } } },
-            function (err) {
+        Admin.updateOne({ admin_id: adminId }, { $pull: { eventCreated: { event_id: eventId } } },
+            function(err) {
                 if (err) return handleError(err);
                 else {
                     console.log("Event deleted::admin collection.");
@@ -452,10 +438,8 @@ const deleteEvent = async (req, res) => {
         );
     }
     if (userId) {
-        User.updateOne(
-            { user_token: userId },
-            { $pull: { eventCreated: { event_id: eventId } } },
-            function (err) {
+        User.updateOne({ user_token: userId }, { $pull: { eventCreated: { event_id: eventId } } },
+            function(err) {
                 if (err) return handleError(err);
                 else {
                     console.log("Event deleted::user collection.");
@@ -466,7 +450,7 @@ const deleteEvent = async (req, res) => {
     res.status(200).send({ msg: "success" });
 };
 
-const checkin = async (req, res) => {
+const checkin = async(req, res) => {
     const eventId = req.body.event_id;
     const userList = req.body.checkInList;
 
@@ -481,10 +465,7 @@ const checkin = async (req, res) => {
         const eventName = event.name;
 
         for (const userId of userList) {
-            await Event.updateOne(
-                { event_id: eventId, "participants.id": userId },
-                { $set: { "participants.$.entry": true } }
-            );
+            await Event.updateOne({ event_id: eventId, "participants.id": userId }, { $set: { "participants.$.entry": true } });
 
             console.log(`user :: checked-in :: ${userId}`);
 
@@ -524,7 +505,7 @@ const checkin = async (req, res) => {
     }
 };
 
-const submitFeedback = async (req, res) => {
+const submitFeedback = async(req, res) => {
     const { event_id, user_id, rating, comment } = req.body;
     try {
         const event = await Event.findOne({ event_id });
@@ -547,7 +528,7 @@ const submitFeedback = async (req, res) => {
     }
 };
 
-const duplicateEvent = async (req, res) => {
+const duplicateEvent = async(req, res) => {
     const eventId = req.params.eventId || req.body.event_id;
     const userId = req.user.user_token || req.user.id;
 
@@ -583,7 +564,7 @@ const duplicateEvent = async (req, res) => {
             lng: originalEvent.lng,
             capacity: originalEvent.capacity,
             ownerId: userId, // New owner
-            ticketTypes: originalEvent.ticketTypes.map(t => ({ ...t, sold: 0 })), // Reset sold count
+            ticketTypes: originalEvent.ticketTypes.map(t => ({...t, sold: 0 })), // Reset sold count
             registrationQuestions: originalEvent.registrationQuestions,
             visibility: originalEvent.visibility,
             requiresApproval: originalEvent.requiresApproval,
@@ -616,10 +597,7 @@ const duplicateEvent = async (req, res) => {
             lng: newEvent.lng,
         };
 
-        await User.updateOne(
-            { user_token: userId },
-            { $push: { eventCreated: eventData } }
-        );
+        await User.updateOne({ user_token: userId }, { $push: { eventCreated: eventData } });
 
         res.status(200).send({ msg: "Event duplicated successfully", event_id: newToken });
     } catch (e) {
@@ -628,9 +606,9 @@ const duplicateEvent = async (req, res) => {
     }
 };
 
-const manageParticipant = async (req, res) => {
+const manageParticipant = async(req, res) => {
     const { eventId, userId, action } = req.body; // action: 'approve', 'reject', 'waitlist_promote'
-    
+
     try {
         const event = await Event.findOne({ event_id: eventId });
         if (!event) return res.status(404).send({ msg: "Event not found" });
@@ -654,18 +632,18 @@ const manageParticipant = async (req, res) => {
                 ticketType: pending.ticketType,
                 answers: pending.answers
             };
-            
+
             event.participants.push(participantData);
             event.pendingParticipants = event.pendingParticipants.filter(p => p.userId !== userId);
             await event.save();
-            
+
             if (global.io) global.io.emit("participant_updated", { eventId: eventId });
 
             // TODO: Send approval email
-            
+
             return res.status(200).send({ msg: "User approved" });
         }
-        
+
         if (action === 'reject') {
             event.pendingParticipants = event.pendingParticipants.filter(p => p.userId !== userId);
             await event.save();
@@ -686,11 +664,11 @@ const manageParticipant = async (req, res) => {
                 ticketType: "Waitlist Promoted",
                 answers: {}
             };
-            
+
             event.participants.push(participantData);
             event.waitlist = event.waitlist.filter(p => p.userId !== userId);
             await event.save();
-            
+
             if (global.io) global.io.emit("participant_updated", { eventId: eventId });
 
             return res.status(200).send({ msg: "User promoted from waitlist" });
@@ -713,7 +691,7 @@ const manageParticipant = async (req, res) => {
     }
 };
 
-const getMyEvents = async (req, res) => {
+const getMyEvents = async(req, res) => {
     const userId = req.user.user_token || req.user.id || req.body.user_token;
     if (!userId) return res.status(400).send({ msg: "User ID required" });
 
@@ -726,7 +704,7 @@ const getMyEvents = async (req, res) => {
     }
 };
 
-const exportGuests = async (req, res) => {
+const exportGuests = async(req, res) => {
     const { eventId, format, token } = req.body; // format could be 'csv' or 'json' (default csv)
     try {
         const event = await Event.findOne({ event_id: eventId });
@@ -737,22 +715,22 @@ const exportGuests = async (req, res) => {
         // We might also want to check for Admin if we had an Admin model check here, but simplified:
         // Ideally verify token validity via middleware or helper, but for now matching ID/Token
         if (!isOwner) {
-             // Allow admins if token matches an admin (would need DB check, skipping for speed/safety tradeoff unless critical)
-             // Let's assume strict owner check for now as it's safest without full auth context
-             // If token is an admin ID (if we passed adminToken), we might need to check Admin collection.
-             // But existing code uses simple token comparison for owners.
-             // Let's verify if 'token' is the ownerId.
-             // NOTE: Real-world apps should decode JWT. Here we assume token is the ID/stored token.
-             if (event.ownerId !== token) {
-                 // Double check if it's an admin (optional, but good)
-                 const Admin = require("../models/admin");
-                 const admin = await Admin.findOne({ admin_id: token });
-                 if (!admin) return res.status(403).send({ msg: "Unauthorized" });
-             }
+            // Allow admins if token matches an admin (would need DB check, skipping for speed/safety tradeoff unless critical)
+            // Let's assume strict owner check for now as it's safest without full auth context
+            // If token is an admin ID (if we passed adminToken), we might need to check Admin collection.
+            // But existing code uses simple token comparison for owners.
+            // Let's verify if 'token' is the ownerId.
+            // NOTE: Real-world apps should decode JWT. Here we assume token is the ID/stored token.
+            if (event.ownerId !== token) {
+                // Double check if it's an admin (optional, but good)
+                const Admin = require("../models/admin");
+                const admin = await Admin.findOne({ admin_id: token });
+                if (!admin) return res.status(403).send({ msg: "Unauthorized" });
+            }
         }
-        
+
         const participants = event.participants || [];
-        
+
         // Flatten data
         const headers = ["Name", "Email", "Ticket Type", "Status", "Checked In", "Registration Date"];
         // Collect all unique question labels for headers
@@ -765,7 +743,7 @@ const exportGuests = async (req, res) => {
 
         // Create CSV String
         let csvContent = allHeaders.join(",") + "\n";
-        
+
         participants.forEach(p => {
             const row = [
                 `"${(p.name || "").replace(/"/g, '""')}"`,

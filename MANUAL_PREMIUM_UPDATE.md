@@ -39,3 +39,6 @@ This guide explains how to manually update an event to "Premium" status directly
 5.  **Verify**
     - Go back to the website.
     - The event should now be displayed as a Premium event (e.g., with a badge or in premium sections).
+
+
+<!--  -->
