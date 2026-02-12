@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { createTransporter } = require("../utils/emailService");
+const { createTransporter, getTransporter } = require("../utils/emailService");
 const dotenv = require("dotenv");
 const path = require("path");
 dotenv.config({ path: path.join(__dirname, "../.env") });
@@ -11,25 +11,6 @@ try {
         twilioClient = require("twilio")(sid, token);
     }
 } catch (e) {}
-
-function sendSMS(Email, otp) {
-    const transporter = createTransporter();
-
-    let mailOptions = {
-        from: (process.env.NODE_MAILER_USER || "").trim(),
-        to: Email,
-        subject: "One Time Password - UniHub",
-        html: `Please keep your OTP confidential and do not share it with anyone. The OTP will be valid for five minutes only. <br><strong>OTP: ${otp}</strong><br><br>Thank you for choosing UniHub!`,
-    };
-
-    transporter.sendMail(mailOptions, function (err, success) {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("Email sent successfully");
-        }
-    });
-}
 
 function buildMapsLink(Details) {
     try {
@@ -60,85 +41,150 @@ function buildStaticMapImg(Details) {
 
 function sendTicket(Details) {
     const transporter = getTransporter();
-
     const baseUrl = process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:3000";
     const eventLink = Details.event_id ? `${baseUrl}/event/${Details.event_id}` : baseUrl;
     const mapsLink = buildMapsLink(Details);
     const staticImg = buildStaticMapImg(Details);
-    let mailOptions = {
-        from: (process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.NODE_MAILER_USER || "").trim(),
-        to: Details.email,
-        subject: `Your Online Event Pass for ${Details.event_name} - UniHub✨`,
-        html: `Dear <i>${Details.name}</i>,<br><br>Thank you for registering for ${Details.event_name}! Your online pass is ready.<br><br><strong>Pass Number: ${Details.pass}</strong><br>Amount Paid: ${Details.price}<br>${Details.venue ? `Venue: ${Details.venue}<br>` : ""}${Details.date ? `Date: ${Details.date}<br>` : ""}${Details.time ? `Time: ${Details.time}<br>` : ""}${Details.address1 ? `Address: ${Details.address1}<br>` : ""}${Details.city ? `City: ${Details.city}<br>` : ""}${Details.zip ? `PinCode: ${Details.zip}<br>` : ""}<br>${mapsLink ? `<a href="${mapsLink}" target="_blank">Open Location in Google Maps</a><br>` : ""}${staticImg ? `<br><img src="${staticImg}" alt="Event location" style="border-radius:8px;max-width:100%;height:auto"/>` : ""}<br><br><a href="${eventLink}" target="_blank">Open Event Page</a><br><br>Best regards,<br>The UniHub Team`,
+
+    // Use user name from Details (passed from payment controller)
+    const userName = Details.name || "there";
+
+    const mailOptions = {
+            from: (process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.NODE_MAILER_USER || "").trim(),
+            to: Details.email,
+            subject: `🎫 Your UniHub Ticket - ${Details.event_name}`,
+            html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 20px;">
+                <div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); border-radius: 16px 16px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 You're In!</h1>
+                </div>
+                <div style="background-color: white; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+                        Hi <strong style="color: #5F57F7;">${userName}</strong>! 🙌<br>
+                        Your ticket is confirmed for <strong>${Details.event_name}</strong>!
+                    </p>
+                    
+                    <div style="background-color: #f1f5f9; border-left: 4px solid #5F57F7; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                        <h3 style="margin: 0 0 15px 0; color: #5F57F7; font-size: 20px;">${Details.event_name}</h3>
+                        <p style="margin: 8px 0; color: #475569;"><strong>📅 Date:</strong> ${Details.date || "TBA"}</p>
+                        <p style="margin: 8px 0; color: #475569;"><strong>⏰ Time:</strong> ${Details.time || "TBA"}</p>
+                        <p style="margin: 8px 0; color: #475569;"><strong>📍 Venue:</strong> ${Details.venue || "TBA"}</p>
+                        ${Details.price > 0 ? `<p style="margin: 8px 0; color: #475569;"><strong>💰 Price:</strong> ₦${Details.price}</p>` : '<p style="margin: 8px 0; color: #475569;"><strong>💰 Price:</strong> Free</p>'}
+                        <p style="margin: 8px 0; color: #475569;"><strong>🎟️ Ticket:</strong> ${Details.pass}</p>
+                    </div>
+
+                    <div style="text-align: center; margin: 25px 0;">
+                        <p style="color: #64748b; font-size: 14px; margin-bottom: 12px;">Your Ticket Code</p>
+                        <div style="display: inline-block; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); padding: 15px 25px; border-radius: 10px; font-family: monospace; font-size: 24px; font-weight: bold; color: white; letter-spacing: 3px;">
+                            ${Details.pass}
+                        </div>
+                    </div>
+
+                    ${mapsLink ? `<p style="text-align: center;"><a href="${mapsLink}" target="_blank" style="display: inline-block; padding: 12px 24px; background: #5F57F7; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">📍 Open in Maps</a></p>` : ''}
+                    
+                    <p style="color: #64748b; font-size: 13px; margin-top: 30px; text-align: center;">
+                        Present this code at the event entrance. See you there! 🎊
+                    </p>
+                </div>
+                <div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px;">
+                    <p>Made with ❤️ by the UniHub Team</p>
+                </div>
+            </div>
+        `,
     };
 
     transporter.sendMail(mailOptions, function (err, success) {
         if (err) {
-            console.log(err);
+            console.log("Ticket email error:", err);
         } else {
-            console.log("Email sent successfully");
+            console.log("Ticket email sent successfully");
         }
     });
 }
 
-function sendTestMailHandler(req, res) {
-    try {
-        const to = req.body.to || process.env.SMTP_USER || process.env.NODE_MAILER_USER;
-        const transporter = getTransporter();
+function sendTicketPdf(Details, pdfBuffer) {
+    const transporter = createTransporter();
+    const baseUrl = process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:3000";
+    const eventLink = Details.event_id ? `${baseUrl}/event/${Details.event_id}` : baseUrl;
+    const mapsLink = buildMapsLink(Details);
+    const staticImg = buildStaticMapImg(Details);
+    
+    const userName = Details.name || "there";
 
-        let mailOptions = {
-            from: (process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.NODE_MAILER_USER || "").trim(),
-            to,
-            subject: "UniHub Mailer Test",
-            html: `This is a test email from UniHub mailer at ${new Date().toISOString()}.`,
-        };
+    const mailOptions = {
+        from: (process.env.NODE_MAILER_USER || "").trim(),
+        to: Details.email,
+        subject: `🎫 Your UniHub Ticket - ${Details.event_name}`,
+        html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 20px;">
+                <div style="text-align: center; padding: 25px 20px; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); border-radius: 16px 16px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 Ticket Confirmed!</h1>
+                </div>
+                <div style="background-color: white; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    <p style="color: #475569; font-size: 16px;">
+                        Hi <strong style="color: #5F57F7;">${userName}</strong>! 🙌
+                    </p>
+                    <p style="color: #475569;">Your ticket for <strong>${Details.event_name}</strong> is attached as a PDF.</p>
+                    <p style="color: #475569; margin-top: 15px;">Please keep it safe and present it at the event entrance.</p>
+                    ${mapsLink ? `<p style="margin-top: 20px;"><a href="${mapsLink}" target="_blank" style="color: #5F57F7;">📍 View Location on Maps</a></p>` : ''}
+                </div>
+                <div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px;">
+                    <p>UniHub Team ❤️</p>
+                </div>
+            </div>
+        `,
+        attachments: [
+            { filename: `${Details.event_name || 'ticket'}.pdf`, content: pdfBuffer },
+        ],
+    };
 
-        transporter.sendMail(mailOptions, function (err, info) {
-            if (err) {
-                console.log("Mailer error:", err);
-                return res.status(500).send({ ok: false, error: String(err) });
-            } else {
-                console.log("Test email sent:", info.response);
-                return res.status(200).send({ ok: true });
-            }
-        });
-    } catch (e) {
-        return res.status(500).send({ ok: false, error: String(e) });
-    }
+    transporter.sendMail(mailOptions, function (err, info) {
+        if (err) {
+            console.log("Ticket PDF email error:", err);
+        } else {
+            console.log("Ticket PDF email sent:", info.response);
+        }
+    });
 }
 
-async function sendTicketPdf(Details, pdfBuffer) {
+function sendWhatsAppTicket(Details) {
     try {
-        const transporter = createTransporter();
-
-        const baseUrl = process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:3000";
-        const eventLink = Details.event_id ? `${baseUrl}/event/${Details.event_id}` : baseUrl;
+        if (!twilioClient) return;
+        const from = process.env.TWILIO_WHATSAPP_FROM;
+        const toRaw = Details.phone || Details.contactNumber;
+        const to = formatWhatsAppPhone(toRaw);
+        if (!from || !to) return;
+        
+        const userName = Details.name || "there";
+        const amount = Details.price !== undefined ? Details.price : "";
+        const currency = "₦";
         const mapsLink = buildMapsLink(Details);
-        const staticImg = buildStaticMapImg(Details);
-        const mailOptions = {
-            from: (process.env.NODE_MAILER_USER || "").trim(),
-            to: Details.email,
-            subject: `Your Online Event Pass for ${Details.event_name} - UniHub✨`,
-            html: `Dear <i>${Details.name}</i>,<br><br>Your online pass for <b>${Details.event_name}</b> is attached as a PDF. Please keep it safe and do not share it.<br><br>${mapsLink ? `<a href="${mapsLink}" target="_blank">Open Location in Google Maps</a><br>` : ""}${staticImg ? `<br><img src="${staticImg}" alt="Event location" style="border-radius:8px;max-width:100%;height:auto"/>` : ""}<br><br><a href="${eventLink}" target="_blank">Open Event Page</a><br><br>Best regards,<br>The UniHub Team`,
-            attachments: [
-                { filename: "ticket.pdf", content: pdfBuffer },
-            ],
-        };
+        
+        const body = [
+            `🎉 Hey ${userName}! Your ticket is confirmed!`,
+            ``,
+            `📌 Event: ${Details.event_name}`,
+            Details.venue ? `📍 Venue: ${Details.venue}` : null,
+            Details.date ? `📅 Date: ${Details.date}` : null,
+            Details.time ? `⏰ Time: ${Details.time}` : null,
+            ``,
+            `🎟️ Your Ticket Code: ${Details.pass}`,
+            amount !== "" ? `💰 Amount: ${currency}${amount}` : null,
+            ``,
+            mapsLink ? `🗺️ Maps: ${mapsLink}` : null,
+            `---`,
+            `Keep this safe! Present at entry. 🙌`,
+        ].filter(Boolean).join("\n");
 
-        await transporter.sendMail(mailOptions);
-        console.log("Ticket PDF email sent successfully");
+        twilioClient.messages.create({
+            from: `whatsapp:${from}`,
+            to: `whatsapp:${to}`,
+            body,
+        }).catch(e => console.log("WhatsApp error:", e.message));
     } catch (e) {
-        console.log(e);
+        console.log("WhatsApp send error:", e);
     }
 }
-
-module.exports = {
-    sendSMS,
-    sendTicket,
-    sendTestMailHandler,
-    sendTicketPdf,
-    sendWhatsAppTicket,
-};
 
 function formatWhatsAppPhone(number) {
     try {
@@ -154,36 +200,29 @@ function formatWhatsAppPhone(number) {
     }
 }
 
-async function sendWhatsAppTicket(Details) {
-    try {
-        if (!twilioClient) return;
-        const from = process.env.TWILIO_WHATSAPP_FROM;
-        const toRaw = Details.phone || Details.contactNumber;
-        const to = formatWhatsAppPhone(toRaw);
-        if (!from || !to) return;
-        const amount = Details.price !== undefined ? Details.price : "";
-        const currency = "₦";
-        const mapsLink = buildMapsLink(Details);
-        const body = [
-            `Hello ${Details.name}, your ticket is confirmed!`,
-            `Event: ${Details.event_name}`,
-            Details.venue ? `Venue: ${Details.venue}` : null,
-            Details.date ? `Date: ${Details.date}` : null,
-            Details.time ? `Time: ${Details.time}` : null,
-            `Pass: ${Details.pass}`,
-            amount !== "" ? `Amount: ${currency}${amount}` : null,
-            mapsLink ? `Map: ${mapsLink}` : null,
-            `Keep this pass safe. Present the QR/pass at entry.`,
-        ]
-            .filter(Boolean)
-            .join("\n");
-
-        await twilioClient.messages.create({
-            from: `whatsapp:${from}`,
-            to: `whatsapp:${to}`,
-            body,
+module.exports = {
+    sendSMS: (Email, otp) => {
+        const transporter = getTransporter();
+        const mailOptions = {
+            from: (process.env.NODE_MAILER_USER || "").trim(),
+            to: Email,
+            subject: "🔐 Your UniHub OTP Code",
+            html: `
+                <div style="font-family: 'Segoe UI', sans-serif; max-width: 400px; margin: 0 auto; text-align: center; padding: 30px;">
+                    <h2 style="color: #5F57F7;">UniHub 🔐</h2>
+                    <p>Your verification code:</p>
+                    <div style="display: inline-block; background: linear-gradient(135deg, #5F57F7, #7C3AED); color: white; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 20px 30px; border-radius: 12px; margin: 20px 0;">
+                        ${otp}
+                    </div>
+                    <p style="color: #64748b; font-size: 13px;">This code expires in 10 minutes. Don't share it! 🚫</p>
+                </div>
+            `,
+        };
+        transporter.sendMail(mailOptions, (err) => {
+            if (err) console.log("OTP email error:", err);
         });
-    } catch (e) {
-        console.log("Twilio WhatsApp error:", e);
-    }
-}
+    },
+    sendTicket,
+    sendTicketPdf,
+    sendWhatsAppTicket,
+};
