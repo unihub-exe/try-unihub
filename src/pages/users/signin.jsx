@@ -158,7 +158,7 @@ export default function Signin({ userIdCookie }) {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/user/signin`, {
+      const response = await fetch(`${API_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email }),
@@ -212,7 +212,7 @@ export default function Signin({ userIdCookie }) {
     setMessage({ errorMsg: "", successMsg: "" });
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/user/signin/verify`, {
+      const response = await fetch(`${API_URL}/auth/signin/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, otp: otp }),

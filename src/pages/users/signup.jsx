@@ -165,7 +165,7 @@ export default function Signup({ userIdCookie }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/user/signup`, {
+      const res = await fetch(`${API_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -218,7 +218,7 @@ export default function Signup({ userIdCookie }) {
     };
 
     try {
-      const res = await fetch(`${API_URL}/user/signup/verify`, {
+      const res = await fetch(`${API_URL}/auth/signup/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(verifyPayload),
