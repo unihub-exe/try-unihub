@@ -31,6 +31,5 @@ router.post("/my-events", authenticate, eventController.getMyEvents);
 router.post("/user-events", eventController.getUserEvents);
 router.post("/event/export-guests", eventController.exportGuests);
 router.post("/feedback", eventController.submitFeedback);
-router.get("/wallet", require("../controllers/walletController").generatePass);
 
 module.exports = router;
