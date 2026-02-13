@@ -87,23 +87,40 @@ function LandingPage() {
   useEffect(() => {
     fetchAllEvents();
 
-    const socket = io(API_URL, {
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-    });
+    // Only initialize socket on client-side
+    if (typeof window === 'undefined') return;
 
-    const handleUpdate = () => {
-      fetchAllEvents();
-    };
+    let socket;
+    try {
+      socket = io(API_URL, {
+        transports: ["websocket", "polling"],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 3,
+      });
 
-    socket.on("participant_updated", handleUpdate);
-    socket.on("event_created", handleUpdate);
-    socket.on("event_deleted", handleUpdate);
-    socket.on("user_registered", handleUpdate);
+      const handleUpdate = () => {
+        fetchAllEvents();
+      };
 
-    return () => {
-      socket.disconnect();
-    };
+      socket.on("participant_updated", handleUpdate);
+      socket.on("event_created", handleUpdate);
+
+      socket.on("connect_error", (error) => {
+        console.log("Socket connection error:", error.message);
+      });
+
+      return () => {
+        if (socket) {
+          socket.off("participant_updated", handleUpdate);
+          socket.off("event_created", handleUpdate);
+          socket.disconnect();
+        }
+      };
+    } catch (error) {
+      console.log("Socket initialization error:", error.message);
+    }
   }, []);
 
   return (
