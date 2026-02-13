@@ -22,11 +22,23 @@ function authenticate(req, res, next) {
     }
 
     try {
-        // Verify token with strict options
-        const payload = jwt.verify(token, JWT_SECRET, {
-            algorithms: ["HS256"], // Only allow HS256
-            issuer: "unihub", // Verify issuer if set
-        });
+        // Verify token - try with issuer first, then without for backward compatibility
+        let payload;
+        try {
+            payload = jwt.verify(token, JWT_SECRET, {
+                algorithms: ["HS256"],
+                issuer: "unihub",
+            });
+        } catch (e) {
+            // Fallback for tokens created without issuer (backward compatibility)
+            if (e.name === "JsonWebTokenError" && e.message.includes("issuer")) {
+                payload = jwt.verify(token, JWT_SECRET, {
+                    algorithms: ["HS256"],
+                });
+            } else {
+                throw e;
+            }
+        }
 
         // Attach user info to request
         req.user = payload;

@@ -49,7 +49,7 @@ const emailStyles = {
   `,
     header: `
     <div style="text-align: center; padding: 40px 20px 30px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;">
-      <img src="https://unihub.app/img/only_logo.png" alt="UniHub" style="height: 48px; width: auto;">
+      <img src="https://try-unihub.vercel.app/img/only_logo.png" alt="UniHub" style="height: 48px; width: auto;">
     </div>
   `,
     content: `
@@ -62,9 +62,9 @@ const emailStyles = {
         Built for the new era of campus life
       </p>
       <p style="margin: 0; font-size: 12px;">
-        <a href="https://unihub.app" style="color: #5F57F7; text-decoration: none; font-weight: 500;">unihub.app</a>
+        <a href="https://try-unihub.vercel.app" style="color: #5F57F7; text-decoration: none; font-weight: 500;">unihub.app</a>
         <span style="color: #cbd5e1; margin: 0 8px;">·</span>
-        <a href="https://unihub.app/privacy" style="color: #94a3b8; text-decoration: none;">Privacy</a>
+        <a href="https://try-unihub.vercel.app/privacy" style="color: #94a3b8; text-decoration: none;">Privacy</a>
       </p>
     </div>
   `,
@@ -169,11 +169,11 @@ exports.sendWelcomeEmail = (user) =>
       </div>
 
       <div style="text-align: center; margin: 40px 0 0 0;">
-        <a href="https://unihub.app/users/dashboard" style="${emailStyles.button}">Open Dashboard</a>
+        <a href="https://try-unihub.vercel.app/users/dashboard" style="${emailStyles.button}">Open Dashboard</a>
       </div>
       
       <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 32px 0 0 0; text-align: center;">
-        Need help getting started? Check out our <a href="https://unihub.app/guide" style="color: #5F57F7; text-decoration: none;">quick start guide</a>
+        Need help getting started? Check out our <a href="https://try-unihub.vercel.app/guide" style="color: #5F57F7; text-decoration: none;">quick start guide</a>
       </p>
     ${emailStyles.footer}
     `
@@ -225,7 +225,7 @@ exports.sendLoginAlertEmail = (user) =>
       </div>
       
       <div style="text-align: center; margin: 32px 0 0 0;">
-        <a href="https://unihub.app/users/settings" style="${emailStyles.button}">Review Account Security</a>
+        <a href="https://try-unihub.vercel.app/users/settings" style="${emailStyles.button}">Review Account Security</a>
       </div>
       
       <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 32px 0 0 0; text-align: center;">

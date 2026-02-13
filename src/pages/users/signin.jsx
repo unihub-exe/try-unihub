@@ -222,7 +222,8 @@ export default function Signin({ userIdCookie }) {
       console.log("Signin response:", data);
 
       if (response.ok) {
-        // Extract token - backend returns user.user_token
+        // IMPORTANT: Use user.user_token (permanent DB token), NOT accessToken (temporary JWT)
+        // The accessToken is for API auth, but the cookie needs the permanent user_token
         const token = data.user?.user_token;
         
         if (!token) {
@@ -235,13 +236,17 @@ export default function Signin({ userIdCookie }) {
           return;
         }
         
-        console.log("Setting user token:", token);
+        console.log("Setting user token (permanent DB token):", token);
         setUserToken(token);
         
         // Verify token was set
         const cookies = new Cookies();
         const savedToken = cookies.get("user_token");
         console.log("Token saved in cookie:", savedToken);
+        
+        if (savedToken !== token) {
+          console.error("Token mismatch! Set:", token, "Got:", savedToken);
+        }
         
         setMessage({
           errorMsg: "",

@@ -60,7 +60,7 @@ exports.verifyLogin = async (req, res) => {
   const token = jwt.sign(
     { user_token: user.user_token, role: user.role },
     JWT_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "15m", issuer: "unihub" }
   );
 
   sendLoginAlertEmail(user).catch(console.error);
@@ -112,7 +112,7 @@ exports.verifyOtp = async (req, res) => {
 
   const role = isOrganization ? "ORGANIZER" : "ATTENDEE";
 
-  const token = jwt.sign({ email, role }, JWT_SECRET);
+  const token = jwt.sign({ email, role }, JWT_SECRET, { issuer: "unihub" });
 
   // Generate a username from name or email
   let baseUsername = name ? name.replace(/\s+/g, "").toLowerCase() : email.split("@")[0];
