@@ -110,16 +110,6 @@ export default function NavBar() {
                         >
                             <FiBell /> Announcements
                         </button>
-                        <button
-                            onClick={() => router.push("/admin/payouts")}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                                isActive("/admin/payouts")
-                                    ? "bg-gray-100 text-[color:var(--secondary-color)]"
-                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                            }`}
-                        >
-                            <FiDollarSign /> Payouts
-                        </button>
                     </nav>
 
                     <div className="flex items-center gap-3">

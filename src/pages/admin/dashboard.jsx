@@ -26,7 +26,7 @@ function AdminDashboard() {
     keyword: "",
     category: "",
     dateRange: "",
-    price: [10, 3000],
+    price: [0, 20000000],
   });
   const [originalEvents, setOriginalEvents] = useState([]);
 

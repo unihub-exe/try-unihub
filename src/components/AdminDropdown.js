@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FiChevronDown, FiUser, FiMail, FiLogOut } from "react-icons/fi";
+import { FiChevronDown, FiUser, FiMail, FiLogOut, FiSettings } from "react-icons/fi";
 import { useRouter } from "next/router";
 import { removeAdminToken } from "@/utils/removeAdminToken";
 
@@ -68,6 +68,16 @@ export default function Dropdown({ adminData }) {
                     </div>
                     
                     <div className="p-2 border-t border-gray-100">
+                        <button
+                            onClick={() => {
+                                router.push("/admin/settings");
+                                setShowDropdown(false);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium text-sm mb-1"
+                        >
+                            <FiSettings size={14} />
+                            Settings
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium text-sm"
