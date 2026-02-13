@@ -305,3 +305,23 @@ exports.sendTicketEmail = (details, user) =>
   );
 
 exports.getTransporter = getTransporter;
+
+// 1. add a delete button in the manage events page. but an organizer cannot delete an event if at least one person has bought a ticket. so when a ticket has been bought, the user will see cancel event instead of delete event. with which if they cancel the event then they will be informed  that a full refund will be sent from their wallet to the customers that bought tickets (organizers cannot withdraw money from their wallet until an hour after the event holds, but if the organizer had any amount (e.g 4000) in their wallet before an event was created and that event brings in some ticket sales of any amount (e.d 8000) the user can withdraw the previous amount but cannot withdraw the new amount until an hour after the event ends.
+
+// 2. fix the wallet page issues. also the wallet page for all users will contain their in app transactions and spending analytics. but for users with the organizer role, theirs will have a section (at the hero position) showing their wallet amount (generated from ticket sales) and a withdraw option, and also section to add their account details. revamp the ui of this page a bit
+
+// 3. look at the /admin pages. right now i beleive most of the information on their are mock information. change that. make it completely functional. also the delete function for events there is not functional. fix it
+
+// 4. in each community chat, user account and event details card (in the upcoming event library page) at the top add a report button. when users click this button, a modal will show up asking them what they want to report about the communit, user or event. then this report will be sent to the reports section of the admin page. here the admin can now delete the report (the reporter will be notified that the admin saw no reason to suspend or delete the account... think up something. THIS NOTIFICATION WILL BE IN APP USING THE NOTIFICATIONS MODAL),  suspend account/community (the reporter will also be informed) or delete account/community/event (the reporter will also be informed). anybody whose account was reporteed and any of the actions was taken agaianst them, when they try to login, they will be imnformed that they cant due to suspension or account deleteion. 
+
+// SUSPENSION LASTS 48 HOURS. DELETION REMOVES THE ACCOUNT COMPLETELY FROM THE DATABASE AND BLACKLISTS THE EMAIL USED.
+
+// in community chats, just like if admins click on a user, they can assign roles, when a regular user click on another users name, they can report, follow or tag that user to their next text in community. the user tagged will get an in app notifictaion
+
+// 5. make the notification modal actually funtional, offering notifications for actions commited in app, like ticket buying, ticket sale, community tags, when an admin posts an event in communty, so on and so forth
+
+// 6. make the payout requests page in /admin actually functional. normally, when a user asks for a payout, they should receive it on or before 48 hours, but in this payout page, the admins can push payment immediately, so the wait time is gone, leaving payout to paystack to perfomr
+
+// 7. i noticed when a user tried to pay for an event ticket, the app tried to use stripe, paystack is our payment processor, make sure it is the only one used all over the app
+
+// 8. to make an event premiuim, it costs a certain amount and events are premium for a certain amount of days. in the admin page, create a page where the admin can handle these logistics. this page will have a section for putting in the price per day for making an event premium, then the rest is calculated using that price. so when a user tries to make his event premium, he will choose the amount of days he wants his event to be premium, then the mount to be paid will be calculated, then he can pay that amount.  

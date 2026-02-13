@@ -13,6 +13,7 @@ router.post("/particular", eventController.particularEvent);
 router.post("/getevent", eventController.particularEvent); // Alias for client
 
 router.post("/delete", eventController.deleteEvent);
+router.post("/cancel", eventController.cancelEvent);
 
 router.post("/checkin", eventController.checkin);
 router.post("/event/checkin", eventController.checkin); // Alias

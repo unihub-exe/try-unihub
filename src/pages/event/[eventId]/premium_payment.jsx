@@ -15,6 +15,9 @@ export default function PremiumPayment() {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState("");
     const [email, setEmail] = useState("");
+    const [days, setDays] = useState(7);
+    const [pricePerDay, setPricePerDay] = useState(100);
+    const [totalPrice, setTotalPrice] = useState(700);
 
     useEffect(() => {
         const token = getUserToken();
@@ -32,7 +35,22 @@ export default function PremiumPayment() {
             })
             .catch(() => {});
         }
+
+        // Fetch premium pricing settings
+        fetch(`${API_URL}/admin/settings`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.premiumPricePerDay) {
+                    setPricePerDay(data.premiumPricePerDay);
+                    setTotalPrice(data.premiumPricePerDay * days);
+                }
+            })
+            .catch(() => {});
     }, []);
+
+    useEffect(() => {
+        setTotalPrice(pricePerDay * days);
+    }, [days, pricePerDay]);
 
     useEffect(() => {
         if (!event_id) return;
@@ -75,12 +93,13 @@ export default function PremiumPayment() {
                     Authorization: `Bearer ${getUserToken()}`,
                 },
                 body: JSON.stringify({
-                    amount: 1000, // ₦1000 for premium
+                    amount: totalPrice,
                     user_token: user,
                     email: email,
                     metadata: {
                         event_id: event_id,
-                        purpose: "premium_upgrade"
+                        purpose: "premium_upgrade",
+                        days: days
                     }
                 }),
             });
@@ -129,13 +148,21 @@ export default function PremiumPayment() {
             const data = await response.json();
 
             if (response.ok) {
+                // Calculate premium expiry date
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + days);
+
                 // Update event to premium
                 const updateResponse = await fetch(`${API_URL}/event/update`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         event_id: event_id,
-                        update: { isPremium: true },
+                        update: { 
+                            isPremium: true,
+                            premiumExpiresAt: expiryDate.toISOString(),
+                            premiumDays: days
+                        },
                         user_token: user
                     }),
                 });

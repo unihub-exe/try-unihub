@@ -202,6 +202,73 @@ export default function ManageEventPage() {
         }
     };
 
+    const handleCancelEvent = async () => {
+        const reason = prompt("Please provide a reason for cancelling this event:");
+        if (!reason) return;
+
+        if (!confirm(`Are you sure you want to cancel "${event.name}"? All participants will be refunded. This action cannot be undone.`)) {
+            return;
+        }
+
+        setMessage({ type: "info", text: "Processing cancellation and refunds..." });
+
+        try {
+            const payload = { event_id: eventId, reason };
+            if (adminToken) payload.admin_id = adminToken;
+            if (userToken) payload.user_id = userToken;
+
+            const res = await fetch(`${API_URL}/event/cancel`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage({ type: "success", text: data.msg || "Event cancelled successfully. Refunds processed." });
+                setTimeout(() => router.push("/users/dashboard"), 2000);
+            } else {
+                setMessage({ type: "error", text: data.msg || "Failed to cancel event" });
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: "error", text: "Network error occurred" });
+        }
+    };
+
+    const handleDeleteEvent = async () => {
+        if (!confirm(`Are you sure you want to DELETE "${event.name}"? This will permanently remove the event. This action cannot be undone.`)) {
+            return;
+        }
+
+        setMessage({ type: "info", text: "Deleting event..." });
+
+        try {
+            const payload = { event_id: eventId };
+            if (adminToken) payload.admin_id = adminToken;
+            if (userToken) payload.user_id = userToken;
+
+            const res = await fetch(`${API_URL}/event/delete`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage({ type: "success", text: "Event deleted successfully" });
+                setTimeout(() => router.push("/users/dashboard"), 1500);
+            } else {
+                setMessage({ type: "error", text: data.msg || "Failed to delete event" });
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: "error", text: "Network error occurred" });
+        }
+    };
+
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     if (forbidden) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold">Access Denied</div>;
     if (!event) return <div className="min-h-screen flex items-center justify-center">Event not found</div>;
@@ -241,12 +308,18 @@ export default function ManageEventPage() {
                             )}
                         </p>
                     </div>
-                    <div className="flex gap-3 relative z-10">
+                    <div className="flex gap-3 relative z-10 flex-wrap">
                         <Link href={`/event/${eventId}`} className="px-6 py-3 bg-white border-2 border-gray-100 text-sm text-gray-700 rounded-xl hover:border-[color:var(--secondary-color)] hover:text-[color:var(--secondary-color)] font-bold transition-all shadow-sm flex items-center gap-2">
                              View Public Page
                         </Link>
                         <button onClick={handleSave} className="px-6 py-3 bg-[color:var(--secondary-color)] text-sm text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
                             <FiSave className="text-lg" /> Save Changes
+                        </button>
+                        <button onClick={handleCancelEvent} className="px-6 py-3 bg-yellow-500 text-sm text-white rounded-xl hover:shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
+                            <FiX className="text-lg" /> Cancel Event
+                        </button>
+                        <button onClick={handleDeleteEvent} className="px-6 py-3 bg-red-500 text-sm text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
+                            <FiTrash2 className="text-lg" /> Delete Event
                         </button>
                     </div>
                 </div>

@@ -113,6 +113,8 @@ const userSchema = new mongoose.Schema({
     wallet: {
         availableBalance: { type: Number, default: 0 },
         pendingBalance: { type: Number, default: 0 },
+        lockedBalance: { type: Number, default: 0 }, // Balance from recent events (locked for 1 hour after event)
+        totalEarnings: { type: Number, default: 0 },
         payout: {
             minimumThreshold: { type: Number, default: 0 },
             autoPayout: { type: Boolean, default: false },
@@ -128,6 +130,25 @@ const userSchema = new mongoose.Schema({
             bankCode: { type: String },
             bankName: { type: String },
         }
+    },
+    // Suspension tracking
+    suspended: {
+        type: Boolean,
+        default: false
+    },
+    suspendedUntil: {
+        type: Date,
+        default: null
+    },
+    suspensionReason: {
+        type: String,
+        default: null
+    },
+    // Account status
+    accountStatus: {
+        type: String,
+        enum: ['active', 'suspended', 'deleted'],
+        default: 'active'
     },
     // Transaction history for regular users
     transactions: [{

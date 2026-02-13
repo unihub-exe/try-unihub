@@ -415,39 +415,164 @@ const particularEvent = async(req, res) => {
 };
 
 const deleteEvent = async(req, res) => {
-    const eventId = req.body.event_id;
-    const adminId = req.body.admin_id;
-    const userId = req.body.user_id;
+    try {
+        const eventId = req.body.event_id;
+        const adminId = req.body.admin_id;
+        const userId = req.body.user_id;
 
-    Event.deleteOne({ event_id: eventId }, function(err) {
-        if (err) return handleError(err);
-        else {
-            console.log("Event deleted::events collection.");
-            if (global.io) global.io.emit("event_deleted", { eventId: eventId });
+        // Find the event
+        const event = await Event.findOne({ event_id: eventId });
+        if (!event) {
+            return res.status(404).send({ msg: "Event not found" });
         }
-    });
 
-    if (adminId) {
-        Admin.updateOne({ admin_id: adminId }, { $pull: { eventCreated: { event_id: eventId } } },
-            function(err) {
-                if (err) return handleError(err);
-                else {
-                    console.log("Event deleted::admin collection.");
-                }
-            }
-        );
+        // Check if tickets have been sold
+        const ticketsSold = event.participants && event.participants.length > 0;
+        
+        if (ticketsSold) {
+            return res.status(400).send({ 
+                msg: "Cannot delete event with sold tickets. Please cancel the event instead to process refunds.",
+                ticketsSold: event.participants.length
+            });
+        }
+
+        // Delete event
+        await Event.deleteOne({ event_id: eventId });
+        console.log("Event deleted::events collection.");
+        
+        if (global.io) {
+            global.io.emit("event_deleted", { eventId: eventId });
+        }
+
+        // Remove from admin/user collections
+        if (adminId) {
+            await Admin.updateOne(
+                { admin_id: adminId }, 
+                { $pull: { eventCreated: { event_id: eventId } } }
+            );
+            console.log("Event deleted::admin collection.");
+        }
+        
+        if (userId) {
+            await User.updateOne(
+                { user_token: userId }, 
+                { $pull: { eventCreated: { event_id: eventId } } }
+            );
+            console.log("Event deleted::user collection.");
+        }
+
+        res.status(200).send({ msg: "Event deleted successfully" });
+    } catch (error) {
+        console.error("Delete event error:", error);
+        res.status(500).send({ msg: "Server error" });
     }
-    if (userId) {
-        User.updateOne({ user_token: userId }, { $pull: { eventCreated: { event_id: eventId } } },
-            function(err) {
-                if (err) return handleError(err);
-                else {
-                    console.log("Event deleted::user collection.");
+};
+
+const cancelEvent = async(req, res) => {
+    try {
+        const eventId = req.body.event_id;
+        const userId = req.body.user_id;
+        const adminId = req.body.admin_id;
+        const reason = req.body.reason || "Event cancelled by organizer";
+
+        // Find the event
+        const event = await Event.findOne({ event_id: eventId });
+        if (!event) {
+            return res.status(404).send({ msg: "Event not found" });
+        }
+
+        // Check if already cancelled
+        if (event.cancelled) {
+            return res.status(400).send({ msg: "Event is already cancelled" });
+        }
+
+        // Get organizer
+        const organizer = await User.findOne({ user_token: event.ownerId });
+        if (!organizer) {
+            return res.status(404).send({ msg: "Organizer not found" });
+        }
+
+        // Process refunds for all participants
+        const { processRefund } = require("./walletController");
+        const { createNotification } = require("./notificationController");
+        const Transaction = require("../models/Transaction");
+        
+        let totalRefunds = 0;
+        const refundPromises = [];
+
+        for (const participant of event.participants) {
+            const amountPaid = participant.amount_paid || 0;
+            
+            if (amountPaid > 0) {
+                totalRefunds += amountPaid;
+                
+                // Process refund
+                refundPromises.push(
+                    processRefund(participant.user_id, amountPaid, eventId, event.name)
+                );
+                
+                // Deduct from organizer's wallet
+                if (organizer.wallet.availableBalance >= amountPaid) {
+                    organizer.wallet.availableBalance -= amountPaid;
+                } else if (organizer.wallet.lockedBalance >= amountPaid) {
+                    organizer.wallet.lockedBalance -= amountPaid;
+                } else {
+                    // Deduct from both if needed
+                    const fromAvailable = Math.min(organizer.wallet.availableBalance, amountPaid);
+                    const fromLocked = amountPaid - fromAvailable;
+                    organizer.wallet.availableBalance -= fromAvailable;
+                    organizer.wallet.lockedBalance -= fromLocked;
                 }
+                
+                // Create refund transaction for organizer
+                await Transaction.create({
+                    userId: organizer.user_token,
+                    type: 'refund_sent',
+                    amount: -amountPaid,
+                    description: `Refund sent - ${event.name} (Cancelled)`,
+                    eventId,
+                    eventName: event.name,
+                    status: 'completed'
+                });
             }
+        }
+
+        // Wait for all refunds to process
+        await Promise.all(refundPromises);
+        
+        // Save organizer wallet changes
+        await organizer.save();
+
+        // Mark event as cancelled
+        event.cancelled = true;
+        event.cancelledAt = new Date();
+        event.cancelReason = reason;
+        await event.save();
+
+        // Notify organizer
+        await createNotification(
+            organizer.user_token,
+            'event_cancelled',
+            'Event Cancelled',
+            `"${event.name}" has been cancelled. ₦${totalRefunds.toLocaleString()} in refunds have been processed.`,
+            `/event/${eventId}/manage`
         );
+
+        // Emit socket event
+        if (global.io) {
+            global.io.emit("event_cancelled", { eventId, eventName: event.name });
+        }
+
+        res.status(200).send({ 
+            msg: "Event cancelled successfully. All participants have been refunded.",
+            totalRefunds,
+            participantsRefunded: event.participants.length
+        });
+    } catch (error) {
+        console.error("Cancel event error:", error);
+        res.status(500).send({ msg: "Server error" });
     }
-    res.status(200).send({ msg: "success" });
+};
 };
 
 const checkin = async(req, res) => {
@@ -781,6 +906,7 @@ module.exports = {
     allEvents,
     particularEvent,
     deleteEvent,
+    cancelEvent,
     checkin,
     updateEvent,
     duplicateEvent,

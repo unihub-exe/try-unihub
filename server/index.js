@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const cron = require("node-cron");
 
 const app = express();
 const server = http.createServer(app);
@@ -110,8 +111,55 @@ const mongooseOptions = {
 };
 
 mongoose.connect(MONGO_URI, mongooseOptions)
-    .then(() => console.log("MongoDB Connected"))
+    .then(() => {
+        console.log("MongoDB Connected");
+        
+        // Start earnings unlock scheduler
+        startEarningsScheduler();
+    })
     .catch(err => console.error("MongoDB Connection Error:", err));
+
+// Earnings unlock scheduler - runs every hour
+function startEarningsScheduler() {
+    const { unlockEventEarnings } = require("./controllers/walletController");
+    const Event = require("./models/event");
+    
+    // Run every hour
+    cron.schedule('0 * * * *', async () => {
+        try {
+            console.log("Running earnings unlock check...");
+            
+            const now = new Date();
+            const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+            
+            // Find events that ended more than 1 hour ago and haven't been unlocked
+            const events = await Event.find({
+                earningsLocked: true,
+                // Event date + time is more than 1 hour ago
+            });
+            
+            for (const event of events) {
+                // Parse event date and time
+                const [day, month, year] = event.date.split('/');
+                const [hours, minutes] = event.time.split(':');
+                const eventDateTime = new Date(year, month - 1, day, hours, minutes);
+                
+                // Check if event ended more than 1 hour ago
+                if (eventDateTime < oneHourAgo) {
+                    await unlockEventEarnings(event.event_id);
+                    event.earningsLocked = false;
+                    await event.save();
+                }
+            }
+            
+            console.log("Earnings unlock check completed");
+        } catch (error) {
+            console.error("Earnings unlock scheduler error:", error);
+        }
+    });
+    
+    console.log("Earnings unlock scheduler started");
+}
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -122,15 +170,19 @@ const paymentRoutes = require("./routes/paymentRoute");
 const notificationRoutes = require("./routes/notificationRoutes");
 const userDashboardRoutes = require("./routes/userDashboardRoutes");
 const userInteractionRoutes = require("./routes/userInteractionRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+const walletRoutes = require("./routes/walletRoutes");
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/community", communityRoutes);
 app.use("/event", eventRoutes);
 app.use("/", paymentRoutes);
-app.use("/", notificationRoutes);
+app.use("/notifications", notificationRoutes);
 app.use("/user", userDashboardRoutes);
 app.use("/", userInteractionRoutes);
+app.use("/reports", reportRoutes);
+app.use("/wallet", walletRoutes);
 
 // Image Upload Endpoint with Security
 const multer = require("multer");

@@ -137,6 +137,22 @@ const eventSchema = new mongoose.Schema(
         analytics: {
             referrals: { type: Map, of: Number, default: {} },
         },
+        earningsLocked: {
+            type: Boolean,
+            default: true
+        },
+        cancelled: {
+            type: Boolean,
+            default: false
+        },
+        cancelledAt: {
+            type: Date,
+            default: null
+        },
+        cancelReason: {
+            type: String,
+            default: null
+        },
     },
     { timestamps: true }
 );

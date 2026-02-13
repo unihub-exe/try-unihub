@@ -1,5 +1,6 @@
 import UserNavBar from "@/components/UserNavBar";
 import EventChat from "@/components/EventChat";
+import ReportButton from "@/components/ReportButton";
 import { getUserToken } from "@/utils/getUserToken";
 import Head from "next/head";
 import Image from "next/image";
@@ -366,6 +367,13 @@ function EventPage() {
                 >
                   <FiMessageCircle className="text-lg" /> WhatsApp
                 </a>
+                {userId && eventData.ownerId !== userId && (
+                  <ReportButton 
+                    reportType="event"
+                    reportedId={eventId}
+                    reportedName={eventData.name}
+                  />
+                )}
               </div>
             </div>
           </div>

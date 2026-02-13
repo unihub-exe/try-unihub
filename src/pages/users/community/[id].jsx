@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { getUserToken } from "@/utils/getUserToken";
+import ReportButton from "@/components/ReportButton";
 import { FiSend, FiArrowLeft, FiImage, FiTrash2, FiMoreVertical, FiCalendar, FiUserX, FiShield, FiStar, FiSmile, FiPlus } from "react-icons/fi";
 import { BsPinAngleFill, BsShieldFillCheck, BsCheck2All, BsCheck2 } from "react-icons/bs";
 import { io } from "socket.io-client";

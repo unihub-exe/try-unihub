@@ -13,6 +13,8 @@ const {
     getSystemStats,
     getTestimonials,
 } = require("../controllers/adminController");
+const { getSettings, updateSettings } = require("../controllers/adminSettingsController");
+const { authenticate, requireRole } = require("../middleware/auth");
 // const { sendTestMailHandler } = require("../controllers/smsController");
 
 router.route("/setadmin").post(setAdmin);
@@ -26,5 +28,8 @@ router.route("/events/:id").delete(deleteEvent);
 router.route("/announcements").get(getAnnouncements).post(createAnnouncement);
 router.route("/stats").get(getSystemStats);
 router.route("/testimonials").get(getTestimonials);
+
+// Settings routes
+router.route("/settings").get(getSettings).post(authenticate, requireRole("ADMIN"), updateSettings);
 
 module.exports = router;
