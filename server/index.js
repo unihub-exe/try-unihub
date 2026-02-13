@@ -18,6 +18,7 @@ const rateLimit = require("express-rate-limit");
 const corsOptions = {
     origin: [
         "http://localhost:3000",
+        "https://try-unihub.vercel.app",
         "https://unihub-test.vercel.app",
         "https://*.vercel.app",
         "http://localhost:3001"

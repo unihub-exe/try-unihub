@@ -2,7 +2,7 @@
 const nextConfig = {
     reactStrictMode: true,
     images: {
-        domains: ["unihub-test-server.onrender.com", "invite-server-cykk.onrender.com", "localhost"],
+        domains: ["try-unihub.onrender.com", "localhost"],
         remotePatterns: [
             {
                 protocol: "https",
@@ -18,7 +18,7 @@ const nextConfig = {
         return [
             {
                 source: "/backend/:path*",
-                destination: "https://invite-server-cykk.onrender.com/:path*",
+                destination: "https://try-unihub.onrender.com/:path*",
             },
         ];
     },

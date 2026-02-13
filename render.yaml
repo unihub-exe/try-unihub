@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: invite-server
+    name: try-unihub
     env: node
     region: singapore
     plan: free

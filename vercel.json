@@ -1,6 +1,6 @@
 {
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://invite-server-cykk.onrender.com",
+    "NEXT_PUBLIC_API_URL": "https://try-unihub.onrender.com",
     "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "df3zptxqc"
   }
 }
