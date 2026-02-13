@@ -219,23 +219,45 @@ export default function Signin({ userIdCookie }) {
       });
 
       const data = await response.json();
+      console.log("Signin response:", data);
 
       if (response.ok) {
+        // Extract token - backend returns user.user_token
+        const token = data.user?.user_token;
+        
+        if (!token) {
+          console.error("No user_token in response:", data);
+          setMessage({ 
+            errorMsg: "Authentication error. Please try again.", 
+            successMsg: "" 
+          });
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Setting user token:", token);
+        setUserToken(token);
+        
+        // Verify token was set
+        const cookies = new Cookies();
+        const savedToken = cookies.get("user_token");
+        console.log("Token saved in cookie:", savedToken);
+        
         setMessage({
           errorMsg: "",
           successMsg: data.msg || "Verified successfully!",
         });
         setStep(3);
-        const token = data.user?.user_token || data.accessToken;
-        setUserToken(token);
-
+        
+        // Use router.push for better Next.js handling
         setTimeout(() => {
-          window.location.href = "/users/dashboard";
+          router.push("/users/dashboard");
         }, 1500);
       } else {
         setMessage({ errorMsg: data.msg || "Invalid code", successMsg: "" });
       }
     } catch (error) {
+      console.error("Signin error:", error);
       setMessage({
         errorMsg: "Something went wrong. Please try again.",
         successMsg: "",

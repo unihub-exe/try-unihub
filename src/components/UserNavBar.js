@@ -18,8 +18,7 @@ export default function NavBar() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!userIdCookie) {
-        // console.error("No cookie found! Please signin");
-        // router.push("/users/signin");
+        console.log("No user token found");
         return;
       }
       try {
@@ -29,20 +28,27 @@ export default function NavBar() {
           body: JSON.stringify({ user_token: userIdCookie }),
         });
         if (!response.ok) {
-          if (response.status === 401) {
+          if (response.status === 401 || response.status === 403) {
+            console.error("Authentication failed, clearing token");
             import("universal-cookie").then((Cookies) => {
               const cookies = new Cookies.default();
               cookies.remove("user_token", { path: "/" });
-              router.push("/users/signin");
+              // Add a small delay to ensure cookie is cleared
+              setTimeout(() => {
+                router.push("/users/signin");
+              }, 100);
             });
             return;
           }
-          throw new Error(`${response.status} ${response.statusText}`);
+          // Don't redirect on other errors (500, network issues, etc.)
+          console.error(`API error: ${response.status}`);
+          return;
         }
         const data = await response.json();
         setUserData(data);
       } catch (error) {
         console.error("Fetch user data failed:", error);
+        // Don't redirect on network errors
       }
     };
 
