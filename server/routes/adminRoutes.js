@@ -16,15 +16,15 @@ const {
 // const { sendTestMailHandler } = require("../controllers/smsController");
 
 router.route("/setadmin").post(setAdmin);
-router.route("/admin/auth").post(adminAuth);
-router.route("/admin/details").post(adminDetails);
-// router.route("/admin/mail/test").post(sendTestMailHandler); // TODO: Implement sendTestMailHandler
-router.route("/admin/users").get(getAllUsers);
-router.route("/admin/users/:id").delete(deleteUser);
-router.route("/admin/events").get(getAllEvents);
-router.route("/admin/events/:id").delete(deleteEvent);
-router.route("/admin/announcements").get(getAnnouncements).post(createAnnouncement);
-router.route("/admin/stats").get(getSystemStats);
-router.route("/admin/testimonials").get(getTestimonials);
+router.route("/auth").post(adminAuth);
+router.route("/details").post(adminDetails);
+// router.route("/mail/test").post(sendTestMailHandler); // TODO: Implement sendTestMailHandler
+router.route("/users").get(getAllUsers);
+router.route("/users/:id").delete(deleteUser);
+router.route("/events").get(getAllEvents);
+router.route("/events/:id").delete(deleteEvent);
+router.route("/announcements").get(getAnnouncements).post(createAnnouncement);
+router.route("/stats").get(getSystemStats);
+router.route("/testimonials").get(getTestimonials);
 
 module.exports = router;

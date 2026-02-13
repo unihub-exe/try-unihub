@@ -3,10 +3,10 @@ const router = express.Router();
 const { searchUsers, getPublicProfile, followUser, unfollowUser, getFollowersList } = require("../controllers/userInteractionController");
 const { authenticate } = require("../middleware/auth");
 
-router.get("/search", searchUsers);
-router.get("/profile/:id", getPublicProfile);
-router.post("/follow", authenticate, followUser);
-router.post("/unfollow", authenticate, unfollowUser);
-router.get("/followers/:id", getFollowersList);
+router.get("/social/search", searchUsers);
+router.get("/social/profile/:id", getPublicProfile);
+router.post("/social/follow", authenticate, followUser);
+router.post("/social/unfollow", authenticate, unfollowUser);
+router.get("/social/followers/:id", getFollowersList);
 
 module.exports = router;

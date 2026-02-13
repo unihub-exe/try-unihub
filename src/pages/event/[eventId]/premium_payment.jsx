@@ -39,7 +39,7 @@ export default function PremiumPayment() {
 
         const fetchEvent = async () => {
             try {
-                const response = await fetch(`${API_URL}/getevent`, {
+                const response = await fetch(`${API_URL}/event/getevent`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ event_id }),

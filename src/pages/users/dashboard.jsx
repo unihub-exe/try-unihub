@@ -29,7 +29,7 @@ function UserDashboard() {
   // Fix: Handle 400 errors gracefully
   const fetchAllEvents = async () => {
     try {
-      const response = await fetch(`${API_URL}/getallevents`);
+      const response = await fetch(`${API_URL}/event/getallevents`);
       if (!response.ok) {
         console.warn("Backend error:", response.status);
         setAllEvents([]); 

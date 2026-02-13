@@ -41,7 +41,7 @@ export default function Payment() {
         const fetchEvent = async () => {
             try {
             const response = await fetch(
-                `${API_URL}/getevent`,
+                `${API_URL}/event/getevent`,
                 {
                 method: "POST",
                 headers: {

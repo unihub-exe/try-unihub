@@ -22,7 +22,7 @@ export default function EventLibrary() {
 
     const fetchEvents = async () => {
       try {
-        const res = await fetch(`${API_URL}/events/user-events`, {
+        const res = await fetch(`${API_URL}/event/user-events`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_token: userId }),

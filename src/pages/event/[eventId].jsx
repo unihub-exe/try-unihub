@@ -66,7 +66,7 @@ function EventPage() {
           urlParams.get("ref") ||
           (document.referrer ? new URL(document.referrer).hostname : null);
 
-        const response = await fetch(`${API_URL}/getevent`, {
+        const response = await fetch(`${API_URL}/event/getevent`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

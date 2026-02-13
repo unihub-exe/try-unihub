@@ -42,7 +42,7 @@ function AdminEventPage() {
         }
         try {
             const response = await fetch(
-                `${API_URL}/delete`,
+                `${API_URL}/event/delete`,
                 {
                     method: "POST",
                     headers: {
@@ -71,7 +71,7 @@ function AdminEventPage() {
         const fetchEvent = async () => {
             try {
                 const response = await fetch(
-                    `${API_URL}/getevent`,
+                    `${API_URL}/event/getevent`,
                     {
                         method: "POST",
                         headers: {

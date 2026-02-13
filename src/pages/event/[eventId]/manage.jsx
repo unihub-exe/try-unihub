@@ -41,7 +41,7 @@ export default function ManageEventPage() {
     const fetchEvent = useCallback(async () => {
         if (!eventId) return;
         try {
-            const res = await fetch(`${API_URL}/getevent`, {
+            const res = await fetch(`${API_URL}/event/getevent`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ event_id: eventId }),

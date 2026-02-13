@@ -55,7 +55,7 @@ function LandingPage() {
     const base = API_URL;
     if (!base) return; // skip in preview when API URL is not set
     try {
-      const response = await fetch(`${base}/getallevents`);
+      const response = await fetch(`${base}/event/getallevents`);
       const statsRes = await fetch(`${base}/admin/stats`);
 
       if (statsRes.ok) {
