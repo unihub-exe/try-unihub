@@ -632,9 +632,11 @@ className={ `flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transiti
         className="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-900/20 transition-all hover:scale-105" >
         Create Event <FiCheck/></button>
     )
-} </div></
-form ></div></
-    div ><style jsx global > { `
+}
+            </div>
+        </form>
+    </div>
+    <style jsx global>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -648,11 +650,9 @@ form ></div></
         .animate-fadeIn {
           animation: fadeIn 0.4s ease-out forwards;
         }
-      ` } </style></
-    div >
+      `}</style>
+    </div>
 );
 };
-
-export default CreateEvent;
 
 export default CreateEvent;
