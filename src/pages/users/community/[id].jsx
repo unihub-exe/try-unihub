@@ -417,7 +417,10 @@ export default function CommunityChat() {
                     const isMe = user?._id === post.authorId || user?._id === post.author;
                     const prevPost = index > 0 ? reversedPosts[index - 1] : null;
                     const isSameAuthor = prevPost && (prevPost.authorId === post.authorId || prevPost.author === post.author);
-                    const showName = !isMe && !isSameAuthor;
+                    
+                    // Show username if different author from previous message OR if it's been more than 2 minutes
+                    const timeDiff = prevPost ? new Date(post.createdAt) - new Date(prevPost.createdAt) : Infinity;
+                    const showName = !isSameAuthor || timeDiff > 120000; // 2 minutes
 
                     // Date separator
                     const currentDate = new Date(post.createdAt).toDateString();
@@ -428,103 +431,101 @@ export default function CommunityChat() {
                         <React.Fragment key={post._id}>
                             {/* Date Separator */}
                             {showDateSeparator && (
-                                <div className="flex justify-center my-3">
-                                    <span className="bg-[#ffffff] text-[#54656f] text-[11px] font-medium px-3 py-1 rounded-lg shadow-sm">
+                                <div className="flex justify-center my-4">
+                                    <span className="bg-white/90 backdrop-blur-sm text-[#54656f] text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm">
                                         {formatDateSeparator(post.createdAt)}
                                     </span>
                                 </div>
                             )}
 
-                            {/* Message Bubble */}
-                            <div className={`flex w-full mb-[2px] ${isMe ? 'justify-end' : 'justify-start'} group ${showName ? 'mt-2' : ''}`}>
-                                <div className={`relative max-w-[85%] md:max-w-[65%] ${isMe ? 'order-1' : 'order-1'}`}>
-                                    {/* Bubble */}
+                            {/* Message Container */}
+                            <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'} group ${showName ? 'mt-4' : 'mt-0.5'}`}>
+                                <div className={`relative max-w-[85%] md:max-w-[65%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                    {/* Username Label (Always show for others, never for self) */}
+                                    {!isMe && showName && (
+                                        <div 
+                                            className="flex items-center gap-1.5 mb-1 px-1 cursor-pointer"
+                                            onClick={() => isAdmin && handleUserClick(post)}
+                                        >
+                                            {/* Small Avatar */}
+                                            <div className="h-5 w-5 rounded-full overflow-hidden flex-shrink-0" style={{ backgroundColor: getNameColor(post.authorName) + '20' }}>
+                                                <img 
+                                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} 
+                                                    alt="" 
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            </div>
+                                            <span 
+                                                className="text-xs font-bold tracking-wide"
+                                                style={{ color: getNameColor(post.authorName) }}
+                                            >
+                                                {post.authorName}
+                                            </span>
+                                            {post.authorType === 'Admin' && (
+                                                <BsShieldFillCheck className="text-[#00a884] text-xs" />
+                                            )}
+                                            {isPartner && post.authorId !== user._id && userRole === 'partner' && (
+                                                <FiStar className="text-amber-500 text-xs" />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Message Bubble */}
                                     <div 
-                                        className={`relative px-[9px] pt-[6px] pb-[8px] text-[14.2px] leading-[19px] shadow-sm ${
+                                        className={`relative px-3 py-2 text-sm leading-relaxed shadow-sm ${
                                             isMe 
-                                            ? 'bg-[#d9fdd3] rounded-lg rounded-tr-none' 
-                                            : 'bg-white rounded-lg rounded-tl-none'
+                                            ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-md' 
+                                            : 'bg-white text-[#111b21] rounded-2xl rounded-tl-md'
                                         } ${isAdmin && !isMe ? 'cursor-pointer' : ''}`}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
                                             if (isAdmin && !isMe) handleUserClick(post);
                                         }}
                                     >
-                                        {/* Tail */}
-                                        {!isSameAuthor && (
-                                            <div className={`absolute top-0 w-[8px] h-[13px] ${
-                                                isMe 
-                                                ? '-right-[8px]' 
-                                                : '-left-[8px]'
-                                            }`}>
-                                                <svg viewBox="0 0 8 13" width="8" height="13">
-                                                    {isMe ? (
-                                                        <path fill="#d9fdd3" d="M1.533 3.568 8 0v13L2.72 8.89C-.36 6.69-.924 5.075 1.533 3.568Z" />
-                                                    ) : (
-                                                        <path fill="#ffffff" d="M6.467 3.568 0 0v13l5.28-4.11C8.36 6.69 8.924 5.075 6.467 3.568Z" />
-                                                    )}
-                                                </svg>
-                                            </div>
-                                        )}
-
                                         {/* Pinned Indicator */}
                                         {post.isPinned && (
-                                            <div className="text-[11px] font-medium mb-1 flex items-center gap-1 text-[#00a884]">
-                                                <BsPinAngleFill size={10} /> Pinned
-                                            </div>
-                                        )}
-
-                                        {/* Author Name (for others' messages) */}
-                                        {showName && (
-                                            <div 
-                                                className="text-[12.8px] font-medium mb-[2px] flex items-center gap-1 cursor-pointer"
-                                                style={{ color: getNameColor(post.authorName) }}
-                                                onClick={() => isAdmin && handleUserClick(post)}
-                                            >
-                                                <span>~{post.authorName}</span>
-                                                {post.authorType === 'Admin' && (
-                                                    <BsShieldFillCheck className="text-[#00a884] text-[10px]" />
-                                                )}
+                                            <div className={`text-[10px] font-bold mb-1.5 flex items-center gap-1 ${isMe ? 'text-emerald-200' : 'text-[#00a884]'}`}>
+                                                <BsPinAngleFill size={9} /> PINNED
                                             </div>
                                         )}
 
                                         {/* Image */}
                                         {post.image && (
-                                            <div className="mb-1 rounded-md overflow-hidden -mx-[3px] -mt-[2px]">
-                                                <img src={post.image} alt="attachment" className="max-w-full h-auto object-cover rounded-md" />
+                                            <div className="mb-2 rounded-xl overflow-hidden -mx-1 -mt-1">
+                                                <img src={post.image} alt="attachment" className="max-w-full h-auto object-cover rounded-xl" />
                                             </div>
                                         )}
 
-                                        {/* Content + Timestamp inline */}
-                                        <div className="flex flex-wrap items-end">
-                                            <span className="whitespace-pre-wrap break-words text-[#111b21]">
-                                                {post.content}
-                                            </span>
-                                            <span className={`text-[11px] ml-2 mt-[2px] flex items-center gap-[2px] flex-shrink-0 ${
-                                                isMe ? 'text-[#667781]' : 'text-[#667781]'
-                                            }`} style={{ float: 'right', marginTop: '3px' }}>
-                                                {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                {isMe && <BsCheck2All className="text-[#53bdeb] text-[14px] ml-[1px]" />}
-                                            </span>
+                                        {/* Content */}
+                                        <div className="whitespace-pre-wrap break-words">
+                                            {post.content}
+                                        </div>
+
+                                        {/* Timestamp */}
+                                        <div className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${
+                                            isMe ? 'text-gray-300' : 'text-[#667781]'
+                                        }`}>
+                                            <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            {isMe && <BsCheck2All className="text-[#53bdeb] text-sm" />}
                                         </div>
                                     </div>
 
                                     {/* Admin Actions (Hover) */}
                                     {isAdmin && (
-                                        <div className={`absolute top-1 ${isMe ? 'left-0 -translate-x-full pr-1' : 'right-0 translate-x-full pl-1'} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                        <div className={`absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
                                             <button 
                                                 onClick={() => handlePinPost(post._id)} 
-                                                className="p-1 bg-white rounded-full shadow text-[#8696a0] hover:text-[#00a884] text-xs" 
+                                                className="p-1.5 bg-white rounded-full shadow-md text-[#8696a0] hover:text-[#00a884] hover:scale-110 transition-all" 
                                                 title="Pin"
                                             >
-                                                <BsPinAngleFill size={12} />
+                                                <BsPinAngleFill size={13} />
                                             </button>
                                             <button 
                                                 onClick={() => handleDeletePost(post._id)} 
-                                                className="p-1 bg-white rounded-full shadow text-[#8696a0] hover:text-red-500 text-xs" 
+                                                className="p-1.5 bg-white rounded-full shadow-md text-[#8696a0] hover:text-red-500 hover:scale-110 transition-all" 
                                                 title="Delete"
                                             >
-                                                <FiTrash2 size={12} />
+                                                <FiTrash2 size={13} />
                                             </button>
                                         </div>
                                     )}
