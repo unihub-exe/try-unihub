@@ -19,6 +19,10 @@ const postSchema = new mongoose.Schema({
         enum: ['User', 'Admin'],
         required: true
     },
+    authorAvatar: {
+        type: String,
+        default: null
+    },
     communityId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Community',

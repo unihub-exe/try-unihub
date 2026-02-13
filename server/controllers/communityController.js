@@ -111,7 +111,7 @@ exports.deleteCommunity = async (req, res) => {
 
 exports.createPost = async (req, res) => {
     try {
-        const { content, communityId, authorId, authorType, authorName, image } = req.body;
+        const { content, communityId, authorId, authorType, authorName, image, authorAvatar } = req.body;
         
         const newPost = await Post.create({
             content,
@@ -119,6 +119,7 @@ exports.createPost = async (req, res) => {
             authorId,
             authorType,
             authorName,
+            authorAvatar,
             image
         });
         
