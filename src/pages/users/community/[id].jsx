@@ -431,8 +431,12 @@ export default function CommunityChat() {
                     // Get avatar URL - use actual avatar or fallback to generated
                     const getAvatarUrl = (authorAvatar, authorName) => {
                         if (authorAvatar) return authorAvatar;
-                        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${authorName}`;
+                        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${authorName || 'user'}`;
                     };
+
+                    // Safe avatar URLs with null checks
+                    const myAvatarUrl = user?.avatar || getAvatarUrl(null, user?.username || user?.displayName || 'me');
+                    const otherAvatarUrl = getAvatarUrl(post.authorAvatar, post.authorName);
 
                     return (
                         <React.Fragment key={post._id}>
@@ -451,13 +455,17 @@ export default function CommunityChat() {
                                 <div className={`flex-shrink-0 ${showAvatar ? 'visible' : 'invisible'}`}>
                                     <div 
                                         className="h-10 w-10 rounded-full overflow-hidden shadow-sm border-2 border-white cursor-pointer hover:scale-110 transition-transform"
-                                        style={{ backgroundColor: getNameColor(post.authorName) + '30' }}
+                                        style={{ backgroundColor: getNameColor(post.authorName || 'user') + '30' }}
                                         onClick={() => !isMe && isAdmin && handleUserClick(post)}
                                     >
                                         <img 
-                                            src={isMe ? (user.avatar || getAvatarUrl(null, user.username || user.displayName)) : getAvatarUrl(post.authorAvatar, post.authorName)} 
-                                            alt={isMe ? 'You' : post.authorName}
+                                            src={isMe ? myAvatarUrl : otherAvatarUrl} 
+                                            alt={isMe ? 'You' : (post.authorName || 'User')}
                                             className="h-full w-full object-cover"
+                                            onError={(e) => {
+                                                // Fallback if image fails to load
+                                                e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${isMe ? 'me' : (post.authorName || 'user')}`;
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -469,10 +477,10 @@ export default function CommunityChat() {
                                         <div className="flex items-center gap-2 mb-1 px-1">
                                             <span 
                                                 className="text-[13px] font-bold cursor-pointer hover:underline"
-                                                style={{ color: getNameColor(post.authorName) }}
+                                                style={{ color: getNameColor(post.authorName || 'user') }}
                                                 onClick={() => isAdmin && handleUserClick(post)}
                                             >
-                                                {post.authorName}
+                                                {post.authorName || 'Unknown User'}
                                             </span>
                                             {post.authorType === 'Admin' && (
                                                 <BsShieldFillCheck className="text-[#00a884] text-xs" />
