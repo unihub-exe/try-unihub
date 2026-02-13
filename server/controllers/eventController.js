@@ -592,7 +592,6 @@ const cancelEvent = async(req, res) => {
         res.status(500).send({ msg: "Server error" });
     }
 };
-};
 
 const checkin = async(req, res) => {
     const eventId = req.body.event_id;
