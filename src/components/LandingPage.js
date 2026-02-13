@@ -84,8 +84,8 @@ function LandingPage() {
   useEffect(() => {
     fetchAllEvents();
 
-    // Only initialize socket on client-side
-    if (typeof window === 'undefined') return;
+    // Socket connection disabled during build
+    if (typeof window === 'undefined' || process.env.NODE_ENV === 'production') return;
 
     let socket;
     try {
