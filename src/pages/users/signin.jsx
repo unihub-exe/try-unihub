@@ -178,6 +178,10 @@ export default function Signin({ userIdCookie }) {
       }
 
       if (response.ok) {
+        // If user logged in with username, update email state with the actual email from response
+        if (data.email && data.email !== email) {
+          setEmail(data.email);
+        }
         setMessage({
           errorMsg: "",
           successMsg: data.msg || "Verification code sent!",
@@ -434,7 +438,7 @@ export default function Signin({ userIdCookie }) {
               <form onSubmit={handleVerifyEmail} className="space-y-6">
                 <div className="group">
                   <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
-                    Email Address
+                    Email Address / Usernname
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
