@@ -148,9 +148,9 @@ export default function Signin({ userIdCookie }) {
     event.preventDefault();
     setMessage({ errorMsg: "", successMsg: "" });
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || email.trim() === "") {
       setMessage({
-        errorMsg: "Please enter a valid email address.",
+        errorMsg: "Please enter your email or username.",
         successMsg: "",
       });
       return;
@@ -161,7 +161,10 @@ export default function Signin({ userIdCookie }) {
       const response = await fetch(`${API_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email }),
+        body: JSON.stringify({ 
+          email: email.includes('@') ? email : undefined,
+          username: !email.includes('@') ? email : undefined
+        }),
       });
 
       const data = await response.json();
@@ -185,7 +188,7 @@ export default function Signin({ userIdCookie }) {
           errorMsg: data.msg || "Failed to sign in",
           successMsg: "",
         });
-        if (data.msg?.toLowerCase().includes("not found")) {
+        if (data.msg?.toLowerCase().includes("not found") || data.msg?.toLowerCase().includes("not registered")) {
           setTimeout(() => {
             setMessage({
               errorMsg: "Redirecting you to SignUp ...",
@@ -438,12 +441,12 @@ export default function Signin({ userIdCookie }) {
                       <FiMail className="text-gray-400 text-lg group-focus-within:text-[color:var(--secondary-color)] transition-colors" />
                     </div>
                     <input
-                      type="email"
+                      type="text"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[color:var(--secondary-color)] transition-all font-medium"
-                      placeholder="you@example.com"
+                      placeholder="Email or Username"
                     />
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import UserNavBar from "@/components/UserNavBar";
+import ConfirmModal from "@/components/ConfirmModal";
 import { getUserToken } from "@/utils/getUserToken";
 import {
   FiUsers,
@@ -69,7 +70,7 @@ const CommunityCard = ({ community, isMember, isCreator, onJoin, onEnter, onLeav
          <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(community._id);
+              onDelete({ type: 'delete', id: community._id, name: community.name });
             }}
             className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 border border-red-100 transition-all"
             title="Delete Community"
@@ -80,7 +81,7 @@ const CommunityCard = ({ community, isMember, isCreator, onJoin, onEnter, onLeav
          <button
             onClick={(e) => {
               e.stopPropagation();
-              onLeave(community._id);
+              onLeave({ type: 'leave', id: community._id, name: community.name });
             }}
             className="p-3 rounded-xl bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-500 border border-gray-100 transition-all"
             title="Leave Community"
@@ -165,6 +166,9 @@ export default function CommunityList() {
   const [isCustomImage, setIsCustomImage] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const PRESET_ICONS = ["🏛️", "🏀", "🎨", "🔬", "🎵", "📚", "💻", "🎭", "🌱", "🚀", "💼", "🎮", "⚽", "🍔", "🎬", "🎤"];
 
@@ -185,7 +189,7 @@ export default function CommunityList() {
       setNewImage(json.url);
       setIsCustomImage(true);
     } catch (e) {
-      alert("Image upload failed");
+      setMessage({ type: "error", text: "Image upload failed" });
     } finally {
       setIsUploading(false);
     }
@@ -258,6 +262,7 @@ export default function CommunityList() {
     e.preventDefault();
     if (!user || (user.role !== "ORGANIZER" && user.role !== "ADMIN")) return;
 
+    setIsProcessing(true);
     try {
       const token = getUserToken();
       const res = await fetch(`${apiUrl}/community/create`, {
@@ -275,8 +280,8 @@ export default function CommunityList() {
           userId: user._id,
           organizerId: user._id,
           ownerId: user._id,
-          user: user._id, // Add generic user field
-          id: user._id,   // Add generic id field
+          user: user._id,
+          id: user._id,
         }),
       });
 
@@ -288,14 +293,17 @@ export default function CommunityList() {
         setNewRules("");
         setNewImage("🏛️");
         setIsCustomImage(false);
-        // Update local user state to reflect new count if needed
         fetchUserDetails(token);
+        setMessage({ type: "success", text: "Community created successfully" });
       } else {
         const data = await res.json();
-        alert(data.msg || "Failed to create community");
+        setMessage({ type: "error", text: data.msg || "Failed to create community" });
       }
     } catch (e) {
       console.error(e);
+      setMessage({ type: "error", text: "Error creating community" });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -309,7 +317,6 @@ export default function CommunityList() {
         },
       });
       if (res.ok) {
-        // Update local state: add user to members list of that community
         setCommunities(prev => prev.map(c => {
             if (c._id === communityId) {
                 const newMembers = c.members ? [...c.members] : [];
@@ -320,11 +327,15 @@ export default function CommunityList() {
             }
             return c;
         }));
+        setMessage({ type: "success", text: "Joined community successfully" });
       } else {
         const data = await res.json();
-        alert(data.msg || "Failed to join community");
+        setMessage({ type: "error", text: data.msg || "Failed to join community" });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      setMessage({ type: "error", text: "Error joining community" });
+    }
   };
 
   const handleFollow = async (targetUserId) => {
@@ -374,10 +385,11 @@ export default function CommunityList() {
     return user?.following?.includes(targetId);
   };
 
-  const handleLeave = async (communityId) => {
-    if (!confirm("Are you sure you want to leave this community?")) return;
+  const handleLeave = async () => {
+    if (!confirmModal) return;
+    setIsProcessing(true);
     try {
-      const res = await fetch(`${apiUrl}/community/leave/${communityId}`, {
+      const res = await fetch(`${apiUrl}/community/leave/${confirmModal.id}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -386,34 +398,49 @@ export default function CommunityList() {
       });
       if (res.ok) {
         setCommunities(prev => prev.map(c => {
-            if (c._id === communityId) {
+            if (c._id === confirmModal.id) {
                 return { ...c, members: c.members.filter(m => m !== user._id) };
             }
             return c;
         }));
+        setMessage({ type: "success", text: "Left community successfully" });
       } else {
         const data = await res.json();
-        alert(data.msg || "Failed to leave community");
+        setMessage({ type: "error", text: data.msg || "Failed to leave community" });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      setMessage({ type: "error", text: "Error leaving community" });
+    } finally {
+      setIsProcessing(false);
+      setConfirmModal(null);
+    }
   };
 
-  const handleDeleteCommunity = async (communityId) => {
-    if (!confirm("Are you sure you want to delete this community? This action cannot be undone.")) return;
+  const handleDeleteCommunity = async () => {
+    if (!confirmModal) return;
+    setIsProcessing(true);
     try {
-      const res = await fetch(`${apiUrl}/community/${communityId}`, {
+      const res = await fetch(`${apiUrl}/community/${confirmModal.id}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${getUserToken()}`,
         },
       });
       if (res.ok) {
-        setCommunities(prev => prev.filter(c => c._id !== communityId));
+        setCommunities(prev => prev.filter(c => c._id !== confirmModal.id));
+        setMessage({ type: "success", text: "Community deleted successfully" });
       } else {
         const data = await res.json();
-        alert(data.msg || "Failed to delete community");
+        setMessage({ type: "error", text: data.msg || "Failed to delete community" });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      setMessage({ type: "error", text: "Error deleting community" });
+    } finally {
+      setIsProcessing(false);
+      setConfirmModal(null);
+    }
   };
 
   // Helper to check if user is friends with someone
@@ -506,8 +533,8 @@ export default function CommunityList() {
                     isCreator={isCreator}
                     onJoin={handleJoin}
                     onEnter={(id) => router.push(`/users/community/${id}`)}
-                    onLeave={handleLeave}
-                    onDelete={handleDeleteCommunity}
+                    onLeave={setConfirmModal}
+                    onDelete={setConfirmModal}
                   />
                 );
               })}
@@ -623,6 +650,41 @@ export default function CommunityList() {
           </div>
         </div>
       )}
+
+      {/* Message Toast */}
+      {message && (
+        <div className="fixed top-20 right-6 z-50 animate-fadeIn">
+          <div className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' : 'bg-green-50 text-green-700 border-2 border-green-200'}`}>
+            <span className="font-bold">{message.text}</span>
+            <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modals */}
+      <ConfirmModal
+        isOpen={confirmModal?.type === 'leave'}
+        onClose={() => setConfirmModal(null)}
+        onConfirm={handleLeave}
+        title="Leave Community"
+        message={`Are you sure you want to leave "${confirmModal?.name}"?`}
+        confirmText="Leave"
+        type="warning"
+        isLoading={isProcessing}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal?.type === 'delete'}
+        onClose={() => setConfirmModal(null)}
+        onConfirm={handleDeleteCommunity}
+        title="Delete Community"
+        message={`Are you sure you want to delete "${confirmModal?.name}"?\n\nThis action cannot be undone. All posts and members will be removed.`}
+        confirmText="Delete"
+        type="danger"
+        isLoading={isProcessing}
+      />
     </div>
   );
 }

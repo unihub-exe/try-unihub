@@ -15,12 +15,14 @@ const JWT_SECRET = process.env.JWT_SECRET;
    SIGN IN (OTP)
 ======================= */
 exports.signIn = async (req, res) => {
-  const email = req.body.email;
-  if (!email) return res.status(400).send({ msg: "Email required" });
+  const { email, username } = req.body;
+  const identifier = email || username;
+  
+  if (!identifier) return res.status(400).send({ msg: "Email or username required" });
 
   // Check if email is blacklisted
   const Blacklist = require("../models/Blacklist");
-  const blacklisted = await Blacklist.findOne({ email });
+  const blacklisted = await Blacklist.findOne({ email: identifier });
   if (blacklisted) {
     return res.status(403).send({ 
       msg: "This email has been blacklisted and cannot be used to access UniHub.",
@@ -28,9 +30,16 @@ exports.signIn = async (req, res) => {
     });
   }
 
-  const user = await User.findOne({ email });
+  // Find user by email or username
+  const user = await User.findOne({ 
+    $or: [
+      { email: identifier },
+      { username: identifier }
+    ]
+  });
+  
   if (!user) {
-    return res.status(400).send({ msg: "Email not registered" });
+    return res.status(400).send({ msg: "Email or username not registered" });
   }
 
   // Check if account is suspended
@@ -58,7 +67,7 @@ exports.signIn = async (req, res) => {
     });
   }
 
-  await OtpAuth.deleteMany({ email });
+  await OtpAuth.deleteMany({ email: user.email });
 
   const otp = otpGenerator.generate(6, {
     digits: true,
@@ -69,12 +78,12 @@ exports.signIn = async (req, res) => {
 
   const hash = await bcrypt.hash(otp, 10);
 
-  await OtpAuth.create({ email, otp: hash });
+  await OtpAuth.create({ email: user.email, otp: hash });
 
   // NON-BLOCKING EMAIL
-  sendOTP(email, otp).catch(console.error);
+  sendOTP(user.email, otp).catch(console.error);
 
-  res.send({ msg: "OTP sent" });
+  res.send({ msg: "OTP sent", email: user.email });
 };
 
 /* =======================

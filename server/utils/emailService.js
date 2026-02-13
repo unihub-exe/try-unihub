@@ -674,6 +674,9 @@ async function sendReportActionEmail(reportData) {
 
 module.exports = {
   sendEmail,
+  sendOTP: exports.sendOTP,
+  sendWelcomeEmail: exports.sendWelcomeEmail,
+  sendLoginAlertEmail: exports.sendLoginAlertEmail,
   sendTicketEmail,
   sendEventReminderEmail,
   sendEventCancellationEmail,

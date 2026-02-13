@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { getUserToken } from "@/utils/getUserToken";
 import ReportButton from "@/components/ReportButton";
+import ConfirmModal from "@/components/ConfirmModal";
 import { FiSend, FiArrowLeft, FiImage, FiTrash2, FiMoreVertical, FiCalendar, FiUserX, FiShield, FiStar, FiSmile, FiPlus } from "react-icons/fi";
 import { BsPinAngleFill, BsShieldFillCheck, BsCheck2All, BsCheck2 } from "react-icons/bs";
 import { io } from "socket.io-client";
@@ -21,6 +22,10 @@ export default function CommunityChat() {
     const [showRules, setShowRules] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [showMenu, setShowMenu] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(null);
+    const [removeMemberModal, setRemoveMemberModal] = useState(null);
+    const [message, setMessage] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const apiUrl = API_URL;
     const socketRef = useRef();
@@ -107,7 +112,7 @@ export default function CommunityChat() {
             const json = await res.json();
             setPostImage(json.url);
         } catch (e) {
-            alert("Image upload failed");
+            setMessage({ type: "error", text: "Image upload failed" });
         } finally {
             setIsUploading(false);
         }
@@ -130,14 +135,25 @@ export default function CommunityChat() {
     };
 
     const handleDeleteCommunity = async () => {
-        if (!confirm("Are you sure you want to delete this community? This cannot be undone.")) return;
+        setIsProcessing(true);
         try {
             const res = await fetch(`${apiUrl}/community/${communityId}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${getUserToken()}` }
             });
-            if (res.ok) router.push("/users/community");
-        } catch (e) { console.error(e); }
+            if (res.ok) {
+                setMessage({ type: "success", text: "Community deleted successfully" });
+                setTimeout(() => router.push("/users/community"), 1500);
+            } else {
+                setMessage({ type: "error", text: "Failed to delete community" });
+            }
+        } catch (e) { 
+            console.error(e);
+            setMessage({ type: "error", text: "Error deleting community" });
+        } finally {
+            setIsProcessing(false);
+            setDeleteModal(null);
+        }
     };
 
     const handlePinPost = async (postId) => {
@@ -157,7 +173,7 @@ export default function CommunityChat() {
     };
 
     const handleDeletePost = async (postId) => {
-        if (!confirm("Delete this message?")) return;
+        setIsProcessing(true);
         try {
             const res = await fetch(`${apiUrl}/community/post/delete`, {
                 method: "POST",
@@ -169,8 +185,17 @@ export default function CommunityChat() {
             });
             if (res.ok) {
                 setPosts(prev => prev.filter(p => p._id !== postId));
+                setMessage({ type: "success", text: "Message deleted" });
+            } else {
+                setMessage({ type: "error", text: "Failed to delete message" });
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e);
+            setMessage({ type: "error", text: "Error deleting message" });
+        } finally {
+            setIsProcessing(false);
+            setDeleteModal(null);
+        }
     };
 
     const handlePost = async (e) => {
@@ -231,14 +256,19 @@ export default function CommunityChat() {
             if (res.ok) {
                 fetchCommunityDetails();
                 setSelectedUser(null);
+                setMessage({ type: "success", text: "Role updated successfully" });
             } else {
-                alert("Failed to update role");
+                setMessage({ type: "error", text: "Failed to update role" });
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e);
+            setMessage({ type: "error", text: "Error updating role" });
+        }
     };
 
     const handleRemoveMember = async () => {
-        if (!selectedUser || !confirm(`Remove ${selectedUser.name} from community?`)) return;
+        if (!removeMemberModal) return;
+        setIsProcessing(true);
         try {
             const res = await fetch(`${apiUrl}/community/member/remove/${communityId}`, {
                 method: "POST",
@@ -246,13 +276,22 @@ export default function CommunityChat() {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${getUserToken()}`
                 },
-                body: JSON.stringify({ targetUserId: selectedUser.id })
+                body: JSON.stringify({ targetUserId: removeMemberModal.id })
             });
             if (res.ok) {
                 fetchCommunityDetails();
                 setSelectedUser(null);
+                setMessage({ type: "success", text: "Member removed successfully" });
+            } else {
+                setMessage({ type: "error", text: "Failed to remove member" });
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e);
+            setMessage({ type: "error", text: "Error removing member" });
+        } finally {
+            setIsProcessing(false);
+            setRemoveMemberModal(null);
+        }
     };
 
     // Auto-resize textarea
@@ -712,7 +751,7 @@ export default function CommunityChat() {
                             <div className="h-px bg-[#e9edef] my-3"></div>
                             
                             <button 
-                                onClick={handleRemoveMember}
+                                onClick={() => setRemoveMemberModal(selectedUser)}
                                 className="w-full py-3 rounded-lg bg-red-50 text-red-600 font-medium hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                             >
                                 <FiUserX /> Remove Member
@@ -726,6 +765,54 @@ export default function CommunityChat() {
             {showMenu && (
                 <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />
             )}
+
+            {/* Message Toast */}
+            {message && (
+                <div className="fixed top-20 right-6 z-50 animate-fadeIn">
+                    <div className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' : 'bg-green-50 text-green-700 border-2 border-green-200'}`}>
+                        <span className="font-bold">{message.text}</span>
+                        <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Community Modal */}
+            <ConfirmModal
+                isOpen={deleteModal?.type === 'community'}
+                onClose={() => setDeleteModal(null)}
+                onConfirm={handleDeleteCommunity}
+                title="Delete Community"
+                message={`Are you sure you want to delete "${community?.name}"?\n\nThis action cannot be undone. All posts and members will be removed.`}
+                confirmText="Delete Community"
+                type="danger"
+                isLoading={isProcessing}
+            />
+
+            {/* Delete Post Modal */}
+            <ConfirmModal
+                isOpen={deleteModal?.type === 'post'}
+                onClose={() => setDeleteModal(null)}
+                onConfirm={() => handleDeletePost(deleteModal.postId)}
+                title="Delete Message"
+                message="Are you sure you want to delete this message? This action cannot be undone."
+                confirmText="Delete"
+                type="danger"
+                isLoading={isProcessing}
+            />
+
+            {/* Remove Member Modal */}
+            <ConfirmModal
+                isOpen={!!removeMemberModal}
+                onClose={() => setRemoveMemberModal(null)}
+                onConfirm={handleRemoveMember}
+                title="Remove Member"
+                message={`Are you sure you want to remove ${removeMemberModal?.name} from this community?`}
+                confirmText="Remove"
+                type="warning"
+                isLoading={isProcessing}
+            />
         </div>
     );
 }

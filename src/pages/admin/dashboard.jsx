@@ -11,6 +11,8 @@ import {
   FiUsers,
   FiMapPin,
   FiCalendar,
+  FiTrash2,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { API_URL } from "@/utils/config";
@@ -22,6 +24,8 @@ function AdminDashboard() {
   const adminIdCookie = getAdminToken();
   const [popupFilterOpen, setPopupFilterOpen] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [message, setMessage] = useState(null);
   const [filterOptions, setFilterOptions] = useState({
     keyword: "",
     category: "",
@@ -73,33 +77,35 @@ function AdminDashboard() {
     };
   }, []);
 
-  const handleDeleteEvent = async (e, eventId) => {
+  const handleDeleteEvent = async (e, eventId, eventName) => {
     e.stopPropagation();
-    if (
-      !confirm(
-        "Are you sure you want to delete this event? This action cannot be undone."
-      )
-    )
-      return;
+    setDeleteModal({ eventId, eventName });
+  };
 
-    setDeletingEvent(eventId);
+  const confirmDelete = async () => {
+    if (!deleteModal) return;
+
+    setDeletingEvent(deleteModal.eventId);
     try {
-      const response = await fetch(`${API_URL}/admin/events/${eventId}`, {
+      const response = await fetch(`${API_URL}/admin/events/${deleteModal.eventId}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        const updatedEvents = allEvents.filter((ev) => ev.event_id !== eventId);
+        const updatedEvents = allEvents.filter((ev) => ev.event_id !== deleteModal.eventId);
         setAllEvents(updatedEvents);
         setOriginalEvents(updatedEvents);
+        setMessage({ type: "success", text: "Event deleted successfully" });
+        setTimeout(() => setMessage(null), 3000);
       } else {
-        alert("Failed to delete event");
+        setMessage({ type: "error", text: "Failed to delete event" });
       }
     } catch (error) {
       console.error("Error deleting event:", error);
-      alert("Error deleting event");
+      setMessage({ type: "error", text: "Error deleting event" });
     } finally {
       setDeletingEvent(null);
+      setDeleteModal(null);
     }
   };
 
@@ -164,6 +170,17 @@ function AdminDashboard() {
       <div className="flex m-auto relative z-10">
         <div className="flex mx-auto container px-4">
             <div className="flex m-auto gap-4 lg:gap-8 w-full h-[calc(90vh)]">
+              {/* Message Toast */}
+              {message && (
+                <div className="fixed top-20 right-6 z-50 animate-fadeIn">
+                  <div className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' : 'bg-green-50 text-green-700 border-2 border-green-200'}`}>
+                    <span className="font-bold">{message.text}</span>
+                    <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Render the regular filter for medium screens and above */}
               <div className="hidden md:flex flex-col sticky top-0 w-1/6 md:w-1/4 h-fit mt-4">
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
@@ -273,6 +290,21 @@ function AdminDashboard() {
                               </div>
                             )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            
+                            {/* Delete Button */}
+                            <button
+                              onClick={(e) => handleDeleteEvent(e, event.event_id, event.name)}
+                              disabled={deletingEvent === event.event_id}
+                              className="absolute top-3 left-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed z-10"
+                              title="Delete Event"
+                            >
+                              {deletingEvent === event.event_id ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <FiTrash2 size={16} />
+                              )}
+                            </button>
+                            
                             <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl text-sm font-bold text-gray-900 shadow-lg flex items-center gap-1">
                               <span className="text-[color:var(--secondary-color)]">
                                 ₦
@@ -352,6 +384,57 @@ function AdminDashboard() {
             </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn">
+            <div className="p-6 bg-gradient-to-r from-red-500 to-red-600 text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <FiAlertCircle size={24} />
+                </div>
+                <h2 className="text-2xl font-black">Delete Event</h2>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 mb-2">
+                Are you sure you want to delete this event?
+              </p>
+              <p className="text-gray-900 font-bold mb-4">"{deleteModal.eventName}"</p>
+              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                ⚠️ This action cannot be undone. All event data and registrations will be permanently deleted.
+              </p>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setDeleteModal(null)}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deletingEvent}
+                  className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {deletingEvent ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <FiTrash2 /> Delete Event
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {

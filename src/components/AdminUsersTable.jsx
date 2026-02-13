@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FiSearch, FiUser, FiMail, FiCreditCard, FiPhone, FiTrash2 } from "react-icons/fi";
 import { io } from "socket.io-client";
+import ConfirmModal from "./ConfirmModal";
 import { API_URL } from "@/utils/config";
 
 export default function AdminUsersTable() {
@@ -8,6 +9,8 @@ export default function AdminUsersTable() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [deleting, setDeleting] = useState(null);
+    const [deleteModal, setDeleteModal] = useState(null);
+    const [message, setMessage] = useState(null);
 
     const fetchUsers = async () => {
         try {
@@ -48,26 +51,27 @@ export default function AdminUsersTable() {
         };
     }, []);
 
-    const handleDeleteUser = async (userId) => {
-        if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    const handleDeleteUser = async () => {
+        if (!deleteModal) return;
         
-        setDeleting(userId);
+        setDeleting(deleteModal.id);
         try {
-            const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+            const response = await fetch(`${API_URL}/admin/users/${deleteModal.id}`, {
                 method: 'DELETE',
             });
             
             if (response.ok) {
-                // Remove user from local state
-                setUsers(users.filter(user => user._id !== userId));
+                setUsers(users.filter(user => user._id !== deleteModal.id));
+                setMessage({ type: "success", text: "User deleted successfully" });
             } else {
-                alert("Failed to delete user");
+                setMessage({ type: "error", text: "Failed to delete user" });
             }
         } catch (error) {
             console.error("Error deleting user:", error);
-            alert("Error deleting user");
+            setMessage({ type: "error", text: "Error deleting user" });
         } finally {
             setDeleting(null);
+            setDeleteModal(null);
         }
     };
 
@@ -161,7 +165,7 @@ export default function AdminUsersTable() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button 
-                                                    onClick={() => handleDeleteUser(user._id)}
+                                                    onClick={() => setDeleteModal({ id: user._id, name: user.username || user.email })}
                                                     disabled={deleting === user._id || user.role === 'ADMIN'}
                                                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                     title="Delete User"
@@ -181,6 +185,30 @@ export default function AdminUsersTable() {
                     </div>
                 )}
             </div>
+
+            {/* Message Toast */}
+            {message && (
+                <div className="fixed top-20 right-6 z-50 animate-fadeIn">
+                    <div className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' : 'bg-green-50 text-green-700 border-2 border-green-200'}`}>
+                        <span className="font-bold">{message.text}</span>
+                        <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!deleteModal}
+                onClose={() => setDeleteModal(null)}
+                onConfirm={handleDeleteUser}
+                title="Delete User"
+                message={`Are you sure you want to delete user "${deleteModal?.name}"?\n\nThis action cannot be undone. All user data will be permanently removed.`}
+                confirmText="Delete User"
+                type="danger"
+                isLoading={!!deleting}
+            />
         </div>
     );
 }

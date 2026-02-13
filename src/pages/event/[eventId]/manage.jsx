@@ -1,4 +1,5 @@
 import UserNavBar from "@/components/UserNavBar";
+import ConfirmModal from "@/components/ConfirmModal";
 import { getUserToken } from "@/utils/getUserToken";
 import { getAdminToken } from "@/utils/getAdminToken";
 import { useRouter } from "next/router";
@@ -23,6 +24,10 @@ export default function ManageEventPage() {
     const [activeTab, setActiveTab] = useState("details"); // details, attendees, checkin, tickets, questions
     const [message, setMessage] = useState({ type: "", text: "" });
     const [forbidden, setForbidden] = useState(false);
+    const [cancelModal, setCancelModal] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(false);
+    const [cancelReason, setCancelReason] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
     
     // Form State
     const [form, setForm] = useState({
@@ -203,17 +208,16 @@ export default function ManageEventPage() {
     };
 
     const handleCancelEvent = async () => {
-        const reason = prompt("Please provide a reason for cancelling this event:");
-        if (!reason) return;
-
-        if (!confirm(`Are you sure you want to cancel "${event.name}"? All participants will be refunded. This action cannot be undone.`)) {
+        if (!cancelReason.trim()) {
+            setMessage({ type: "error", text: "Please provide a cancellation reason" });
             return;
         }
 
+        setIsProcessing(true);
         setMessage({ type: "info", text: "Processing cancellation and refunds..." });
 
         try {
-            const payload = { event_id: eventId, reason };
+            const payload = { event_id: eventId, reason: cancelReason };
             if (adminToken) payload.admin_id = adminToken;
             if (userToken) payload.user_id = userToken;
 
@@ -227,6 +231,7 @@ export default function ManageEventPage() {
 
             if (res.ok) {
                 setMessage({ type: "success", text: data.msg || "Event cancelled successfully. Refunds processed." });
+                setCancelModal(false);
                 setTimeout(() => router.push("/users/dashboard"), 2000);
             } else {
                 setMessage({ type: "error", text: data.msg || "Failed to cancel event" });
@@ -234,14 +239,13 @@ export default function ManageEventPage() {
         } catch (err) {
             console.error(err);
             setMessage({ type: "error", text: "Network error occurred" });
+        } finally {
+            setIsProcessing(false);
         }
     };
 
     const handleDeleteEvent = async () => {
-        if (!confirm(`Are you sure you want to DELETE "${event.name}"? This will permanently remove the event. This action cannot be undone.`)) {
-            return;
-        }
-
+        setIsProcessing(true);
         setMessage({ type: "info", text: "Deleting event..." });
 
         try {
@@ -259,6 +263,7 @@ export default function ManageEventPage() {
 
             if (res.ok) {
                 setMessage({ type: "success", text: "Event deleted successfully" });
+                setDeleteModal(false);
                 setTimeout(() => router.push("/users/dashboard"), 1500);
             } else {
                 setMessage({ type: "error", text: data.msg || "Failed to delete event" });
@@ -266,6 +271,8 @@ export default function ManageEventPage() {
         } catch (err) {
             console.error(err);
             setMessage({ type: "error", text: "Network error occurred" });
+        } finally {
+            setIsProcessing(false);
         }
     };
 
