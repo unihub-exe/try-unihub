@@ -42,41 +42,50 @@ async function sendEmail(to, subject, html) {
     return true;
 }
 
-// Email templates with fun, professional styling
+// Modern, conversion-optimized email templates
 const emailStyles = {
     container: `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 20px;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0;">
   `,
     header: `
-    <div style="text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); border-radius: 16px 16px 0 0;">
-      <img src="https://unihub.app/img/unihub-logo.png" alt="UniHub" style="height: 40px; margin-bottom: 10px;">
-      <h1 style="color: white; margin: 0; font-size: 24px;">UniHub</h1>
+    <div style="text-align: center; padding: 40px 20px 30px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;">
+      <img src="https://unihub.app/img/only_logo.png" alt="UniHub" style="height: 48px; width: auto;">
     </div>
   `,
     content: `
-    <div style="background-color: white; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+    <div style="background-color: #ffffff; padding: 40px 30px;">
   `,
     footer: `
     </div>
-    <div style="text-align: center; padding: 20px; color: #64748b; font-size: 12px;">
-      <p>Made with ❤️ by the UniHub Team</p>
-      <p style="margin-top: 8px;">
-        <a href="https://unihub.app" style="color: #5F57F7; text-decoration: none;">Visit Website</a> · 
-        <a href="#" style="color: #5F57F7; text-decoration: none;">Privacy Policy</a>
+    <div style="text-align: center; padding: 40px 30px; background-color: #f8fafc; border-top: 1px solid #f1f5f9;">
+      <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+        Built for the new era of campus life
+      </p>
+      <p style="margin: 0; font-size: 12px;">
+        <a href="https://unihub.app" style="color: #5F57F7; text-decoration: none; font-weight: 500;">unihub.app</a>
+        <span style="color: #cbd5e1; margin: 0 8px;">·</span>
+        <a href="https://unihub.app/privacy" style="color: #94a3b8; text-decoration: none;">Privacy</a>
       </p>
     </div>
   `,
     button: `
-    display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); 
-    color: white; text-decoration: none; border-radius: 10px; font-weight: 600; margin-top: 20px;
+    display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+    color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; 
+    letter-spacing: -0.01em; transition: all 0.2s;
   `,
     highlightBox: `
-    background-color: #f1f5f9; border-left: 4px solid #5F57F7; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+    border: 1px solid #e2e8f0; padding: 24px; margin: 24px 0; border-radius: 12px;
   `,
     otpCode: `
-    display: inline-block; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); 
-    color: white; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 20px 30px; 
-    border-radius: 12px; margin: 20px 0;
+    display: inline-block; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+    color: white; font-size: 36px; font-weight: 700; letter-spacing: 12px; padding: 24px 40px; 
+    border-radius: 16px; margin: 24px 0; font-family: 'Courier New', monospace;
+  `,
+    statusBadge: `
+    display: inline-block; padding: 6px 12px; background-color: #dcfce7; color: #166534; 
+    border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; 
+    letter-spacing: 0.5px;
   `,
 };
 
@@ -84,22 +93,28 @@ const emailStyles = {
 exports.sendOTP = (email, otp) =>
     sendEmail(
         email,
-        "🔐 Your UniHub Verification Code",
+        "Your UniHub Verification Code",
         `
     ${emailStyles.container}
     ${emailStyles.header}
     ${emailStyles.content}
-      <h2 style="color: #1e293b; margin-bottom: 20px;">Welcome to UniHub! 🎓</h2>
-      <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-        Hi there! Here's your verification code to get you started:
+      <h2 style="color: #0f172a; font-size: 28px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.02em; line-height: 1.2;">
+        Verify your account
+      </h2>
+      <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+        Welcome to the Campus Operating System. Enter this code to complete your setup:
       </p>
-      <div style="text-align: center;">
-        ${emailStyles.otpCode}${otp}</div>
-      <p style="color: #64748b; font-size: 14px; margin-top: 20px;">
-        This code will expire in <strong>10 minutes</strong>. Please don't share it with anyone! 🚫
-      </p>
-      <p style="color: #64748b; font-size: 14px; margin-top: 30px;">
-        If you didn't request this code, you can safely ignore this email. 🙈
+      <div style="text-align: center; margin: 32px 0;">
+        <div style="${emailStyles.otpCode}">${otp}</div>
+      </div>
+      <div style="${emailStyles.highlightBox}">
+        <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.6;">
+          <strong style="color: #1e293b;">Security Notice:</strong> This code expires in 10 minutes. 
+          Never share verification codes with anyone—not even UniHub support.
+        </p>
+      </div>
+      <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 32px 0 0 0;">
+        Didn't request this? Your account is secure. You can safely ignore this message.
       </p>
     ${emailStyles.footer}
     `
@@ -109,28 +124,57 @@ exports.sendOTP = (email, otp) =>
 exports.sendWelcomeEmail = (user) =>
     sendEmail(
         user.email,
-        "🎉 Welcome to UniHub - Let's Get Started!",
+        "Welcome to UniHub",
         `
     ${emailStyles.container}
     ${emailStyles.header}
     ${emailStyles.content}
-      <h2 style="color: #1e293b; margin-bottom: 20px;">Welcome aboard, ${user.username || user.displayName || "Future Leader"}! 🎓</h2>
-      <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-        Congratulations on joining UniHub! You're now part of an amazing community of students just like you. 
-        Here's what you can do:
+      <h2 style="color: #0f172a; font-size: 28px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.02em; line-height: 1.2;">
+        Welcome, ${user.username || user.displayName || "there"}
+      </h2>
+      <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+        You're now part of the Campus Operating System. Here's what you can do:
       </p>
-      <div style="${emailStyles.highlightBox}">
-        <p style="margin: 0 0 10px 0; color: #1e293b;"><strong>✨ Discover Events:</strong> Find amazing events happening on campus</p>
-        <p style="margin: 0 0 10px 0; color: #1e293b;"><strong>🎫 Get Tickets:</strong> Secure your spot at the best events</p>
-        <p style="margin: 0 0 10px 0; color: #1e293b;"><strong>💬 Join Communities:</strong> Connect with like-minded peers</p>
-        <p style="margin: 0; color: #1e293b;"><strong>🚀 Create Events:</strong> Share your own events with the community</p>
+      
+      <div style="margin: 32px 0;">
+        <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
+          <div style="flex-shrink: 0; width: 40px; height: 40px; background: linear-gradient(135deg, #5F57F7 0%, #7C3AED 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+            <span style="color: white; font-size: 20px; font-weight: 600;">1</span>
+          </div>
+          <div>
+            <h3 style="margin: 0 0 6px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Discover Events</h3>
+            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.5;">Browse 500+ active campus events and secure your spot instantly</p>
+          </div>
+        </div>
+        
+        <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
+          <div style="flex-shrink: 0; width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+            <span style="color: white; font-size: 20px; font-weight: 600;">2</span>
+          </div>
+          <div>
+            <h3 style="margin: 0 0 6px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Join Communities</h3>
+            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.5;">Connect with verified students and build your campus network</p>
+          </div>
+        </div>
+        
+        <div style="display: flex; align-items: flex-start;">
+          <div style="flex-shrink: 0; width: 40px; height: 40px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+            <span style="color: white; font-size: 20px; font-weight: 600;">3</span>
+          </div>
+          <div>
+            <h3 style="margin: 0 0 6px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Create & Manage</h3>
+            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.5;">Launch your own events with our powerful ticketing engine</p>
+          </div>
+        </div>
       </div>
-      <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-        Ready to explore? Click the button below to jump into your dashboard!
+
+      <div style="text-align: center; margin: 40px 0 0 0;">
+        <a href="https://unihub.app/users/dashboard" style="${emailStyles.button}">Open Dashboard</a>
+      </div>
+      
+      <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 32px 0 0 0; text-align: center;">
+        Need help getting started? Check out our <a href="https://unihub.app/guide" style="color: #5F57F7; text-decoration: none;">quick start guide</a>
       </p>
-      <div style="text-align: center;">
-        <a href="https://unihub.app/users/dashboard" style="${emailStyles.button}">Explore Events →</a>
-      </div>
     ${emailStyles.footer}
     `
     );
@@ -139,22 +183,53 @@ exports.sendWelcomeEmail = (user) =>
 exports.sendLoginAlertEmail = (user) =>
     sendEmail(
         user.email,
-        "🔔 New Login Detected - UniHub",
+        "New Login Detected",
         `
     ${emailStyles.container}
     ${emailStyles.header}
     ${emailStyles.content}
-      <h2 style="color: #1e293b; margin-bottom: 20px;">New Device Login 📱</h2>
-      <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-        Hi ${user.username || user.displayName || "there"}! We noticed a new login to your UniHub account.
-      </p>
-      <div style="${emailStyles.highlightBox}">
-        <p style="margin: 0; color: #1e293b;"><strong>🌐 Location:</strong> Nigeria</p>
-        <p style="margin: 10px 0 0 0; color: #1e293b;"><strong>🖥️ Device:</strong> ${typeof navigator !== 'undefined' ? navigator.userAgent.includes('Mobile') ? 'Mobile Browser' : 'Desktop Browser' : 'Unknown Device'}</p>
-        <p style="margin: 10px 0 0 0; color: #1e293b;"><strong>⏰ Time:</strong> ${new Date().toLocaleString()}</p>
+      <div style="text-align: center; margin: 0 0 24px 0;">
+        <div style="display: inline-block; padding: 8px 16px; background-color: #fef3c7; border-radius: 8px;">
+          <span style="color: #92400e; font-size: 13px; font-weight: 600;">Security Alert</span>
+        </div>
       </div>
-      <p style="color: #64748b; font-size: 14px; margin-top: 20px;">
-        If this was you, you're all set! If not, please <a href="https://unihub.app/users/settings" style="color: #5F57F7;">secure your account</a> immediately. 🔒
+      
+      <h2 style="color: #0f172a; font-size: 28px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.02em; line-height: 1.2;">
+        New login detected
+      </h2>
+      <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+        Hi ${user.username || user.displayName || "there"}, we detected a new login to your UniHub account.
+      </p>
+      
+      <div style="${emailStyles.highlightBox}">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 100px;">Time</td>
+            <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${new Date().toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Device</td>
+            <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${typeof navigator !== 'undefined' ? navigator.userAgent.includes('Mobile') ? 'Mobile Browser' : 'Desktop Browser' : 'Unknown Device'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Location</td>
+            <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">Nigeria</td>
+          </tr>
+        </table>
+      </div>
+      
+      <div style="background-color: #fef2f2; border-left: 3px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 8px;">
+        <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">
+          <strong>Wasn't you?</strong> Secure your account immediately by changing your password and reviewing recent activity.
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 32px 0 0 0;">
+        <a href="https://unihub.app/users/settings" style="${emailStyles.button}">Review Account Security</a>
+      </div>
+      
+      <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 32px 0 0 0; text-align: center;">
+        This was you? No action needed. Your account is secure.
       </p>
     ${emailStyles.footer}
     `
@@ -164,46 +239,66 @@ exports.sendLoginAlertEmail = (user) =>
 exports.sendTicketEmail = (details, user) =>
     sendEmail(
         details.email,
-        "🎫 Your UniHub Event Ticket - " + details.event_name,
+        "Your Ticket: " + details.event_name,
         `
     ${emailStyles.container}
     ${emailStyles.header}
     ${emailStyles.content}
-      <h2 style="color: #1e293b; margin-bottom: 10px;">🎉 Your Ticket is Ready!</h2>
-      <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-        Hi <strong>${user.username || user.displayName || details.name}</strong>! You're all set for this event. 🙌
+      <div style="text-align: center; margin: 0 0 24px 0;">
+        <div style="${emailStyles.statusBadge}">Confirmed</div>
+      </div>
+      
+      <h2 style="color: #0f172a; font-size: 28px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.02em; line-height: 1.2;">
+        You're going to ${details.event_name}
+      </h2>
+      <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+        Hi ${user.username || user.displayName || details.name}, your ticket is confirmed. Here are your event details:
       </p>
       
       <div style="${emailStyles.highlightBox}">
-        <h3 style="margin: 0 0 15px 0; color: #5F57F7; font-size: 20px;">${details.event_name}</h3>
-        <p style="margin: 8px 0; color: #475569;">
-          <strong>📅 Date:</strong> ${details.date}
-        </p>
-        <p style="margin: 8px 0; color: #475569;">
-          <strong>⏰ Time:</strong> ${details.time}
-        </p>
-        <p style="margin: 8px 0; color: #475569;">
-          <strong>📍 Venue:</strong> ${details.venue}
-        </p>
-        ${details.price > 0 ? `<p style="margin: 8px 0; color: #475569;"><strong>💰 Price:</strong> ₦${details.price}</p>` : ''}
-        <p style="margin: 8px 0; color: #475569;">
-          <strong>🎟️ Ticket Type:</strong> ${details.ticketType || "General Admission"}
-        </p>
+        <h3 style="margin: 0 0 20px 0; color: #1e293b; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;">${details.event_name}</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px; width: 100px;">Date</td>
+            <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${details.date}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px;">Time</td>
+            <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${details.time}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px;">Venue</td>
+            <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${details.venue}</td>
+          </tr>
+          ${details.price > 0 ? `
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px;">Price</td>
+            <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 500;">₦${details.price}</td>
+          </tr>` : ''}
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px;">Ticket Type</td>
+            <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${details.ticketType || "General Admission"}</td>
+          </tr>
+        </table>
       </div>
 
-      <div style="text-align: center; margin: 30px 0;">
-        <p style="color: #475569; font-size: 14px; margin-bottom: 15px;">Your unique ticket code:</p>
-        <div style="display: inline-block; background: #f1f5f9; padding: 15px 25px; border-radius: 10px; font-family: monospace; font-size: 24px; font-weight: bold; color: #5F57F7; letter-spacing: 2px;">
-          ${details.pass}
+      <div style="text-align: center; margin: 40px 0;">
+        <p style="color: #64748b; font-size: 13px; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your Entry Code</p>
+        <div style="display: inline-block; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 32px; border-radius: 16px;">
+          <div style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 6px;">
+            ${details.pass}
+          </div>
         </div>
       </div>
 
-      <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-        Please present this ticket code at the event entrance. We've also sent a copy to your WhatsApp! 📱
-      </p>
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; margin: 32px 0; border-radius: 12px; text-align: center;">
+        <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.6;">
+          Present this code at the entrance. A copy has been sent to your WhatsApp for quick access.
+        </p>
+      </div>
       
-      <p style="color: #64748b; font-size: 14px; margin-top: 30px;">
-        See you at the event! 🎊
+      <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 32px 0 0 0; text-align: center;">
+        Questions? Contact the event organizer through your dashboard.
       </p>
     ${emailStyles.footer}
     `
