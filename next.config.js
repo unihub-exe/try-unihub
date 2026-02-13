@@ -14,6 +14,14 @@ const nextConfig = {
             },
         ],
     },
+    async rewrites() {
+        return [
+            {
+                source: "/backend/:path*",
+                destination: "https://invite-server-cykk.onrender.com/:path*",
+            },
+        ];
+    },
 };
 
 module.exports = nextConfig;
