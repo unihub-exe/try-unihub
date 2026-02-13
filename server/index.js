@@ -110,14 +110,18 @@ const mongooseOptions = {
     socketTimeoutMS: 45000,
 };
 
+console.log("Attempting to connect to MongoDB...");
 mongoose.connect(MONGO_URI, mongooseOptions)
     .then(() => {
-        console.log("MongoDB Connected");
+        console.log("✅ MongoDB Connected Successfully");
         
         // Start earnings unlock scheduler
         startEarningsScheduler();
     })
-    .catch(err => console.error("MongoDB Connection Error:", err));
+    .catch(err => {
+        console.error("❌ MongoDB Connection Error:", err);
+        console.error("Connection string (masked):", MONGO_URI.replace(/\/\/.*@/, '//***:***@'));
+    });
 
 // Earnings unlock scheduler - runs every hour
 function startEarningsScheduler() {
@@ -341,27 +345,45 @@ app.use((err, req, res, next) => {
     // Security: Don't leak stack traces in production
     const isDevelopment = process.env.NODE_ENV === "development";
 
-            res.status(err.status || 500).json({
-                msg: isDevelopment ? err.message : "Internal Server Error",
-                ...(isDevelopment && { stack: err.stack })
-            });
-        });
+    res.status(err.status || 500).json({
+        msg: isDevelopment ? err.message : "Internal Server Error",
+        ...(isDevelopment && { stack: err.stack })
+    });
+});
 
-        // 404 Handler
-        app.use((req, res) => {
-            res.status(404).json({ msg: "Route not found" });
-        });
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({ msg: "Route not found" });
+});
 
-        // Graceful Shutdown
-        process.on("SIGTERM", async() => {
-            console.log("SIGTERM received. Shutting down gracefully...");
-            await mongoose.connection.close();
-            server.close(() => {
-                console.log("Server closed");
-                process.exit(0);
-            });
-        });
+// Graceful Shutdown
+process.on("SIGTERM", async() => {
+    console.log("SIGTERM received. Shutting down gracefully...");
+    await mongoose.connection.close();
+    server.close(() => {
+        console.log("Server closed");
+        process.exit(0);
+    });
+});
 
-        const PORT = process.env.PORT || 5000; server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5000;
 
-        module.exports = { app, server, io };
+console.log("Starting server...");
+console.log("PORT:", PORT);
+console.log("NODE_ENV:", process.env.NODE_ENV || 'development');
+
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🚀 Server is ready to accept connections`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+    console.error('❌ Server error:', error);
+    if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use`);
+    }
+});
+
+module.exports = { app, server, io };
