@@ -5,13 +5,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { io } from "socket.io-client";
-import LandingPageDevelopers from "@/utils/landing_page_developers";
 import LiquidFooter from "@/components/Landing_Page_partials/LiquidFooter";
 import LiquidGlass from "@/components/LiquidGlass";
 import { FiStar } from "react-icons/fi";
 import { API_URL } from "@/utils/config";
-const [feature1, feature2, feature3] = LandingPageDevelopers;
-const developers = LandingPageDevelopers.slice(3);
 
 function LandingPage() {
   const [timeLeft, setTimeLeft] = useState({
