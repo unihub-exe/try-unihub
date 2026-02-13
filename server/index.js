@@ -102,7 +102,7 @@ io.on("connection", (socket) => {
 });
 
 // Database Connection with security options
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/unihub";
+const MONGO_URI = process.env.MONGO_ATLAS_URI || process.env.MONGO_URI || "mongodb://localhost:27017/unihub";
 const mongooseOptions = {
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
