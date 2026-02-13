@@ -123,6 +123,7 @@ mongoose.connect(MONGO_URI, mongooseOptions)
 function startEarningsScheduler() {
     const { unlockEventEarnings } = require("./controllers/walletController");
     const Event = require("./models/event");
+    const User = require("./models/user");
     
     // Run every hour
     cron.schedule('0 * * * *', async () => {
@@ -158,7 +159,100 @@ function startEarningsScheduler() {
         }
     });
     
-    console.log("Earnings unlock scheduler started");
+    // Auto-unsuspend accounts - runs every hour
+    cron.schedule('0 * * * *', async () => {
+        try {
+            console.log("Running account suspension check...");
+            
+            const now = new Date();
+            
+            // Find suspended accounts where suspension has expired
+            const result = await User.updateMany(
+                {
+                    suspended: true,
+                    suspendedUntil: { $lt: now }
+                },
+                {
+                    $set: {
+                        suspended: false,
+                        suspendedUntil: null,
+                        suspensionReason: null,
+                        accountStatus: 'active'
+                    }
+                }
+            );
+            
+            if (result.modifiedCount > 0) {
+                console.log(`Auto-unsuspended ${result.modifiedCount} accounts`);
+            }
+        } catch (error) {
+            console.error("Account suspension scheduler error:", error);
+        }
+    });
+    
+    // Premium event expiry - runs daily at midnight
+    cron.schedule('0 0 * * *', async () => {
+        try {
+            console.log("Running premium event expiry check...");
+            
+            const now = new Date();
+            
+            // Find premium events that have expired
+            const expiredEvents = await Event.find({
+                isPremium: true,
+                premiumExpiresAt: { $lt: now }
+            });
+            
+            for (const event of expiredEvents) {
+                event.isPremium = false;
+                await event.save();
+                
+                // Notify event owner
+                if (event.ownerId) {
+                    const { createNotification } = require("./controllers/notificationController");
+                    await createNotification(
+                        event.ownerId,
+                        'premium_expired',
+                        'Premium Status Expired',
+                        `Your event "${event.name}" premium status has expired. Upgrade again to continue enjoying premium benefits.`,
+                        `/event/${event.event_id}/manage`
+                    );
+                }
+            }
+            
+            if (expiredEvents.length > 0) {
+                console.log(`Expired premium status for ${expiredEvents.length} events`);
+            }
+            
+            // Notify events expiring in 24 hours
+            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const expiringEvents = await Event.find({
+                isPremium: true,
+                premiumExpiresAt: { $gte: now, $lt: tomorrow }
+            });
+            
+            for (const event of expiringEvents) {
+                if (event.ownerId) {
+                    const { createNotification } = require("./controllers/notificationController");
+                    await createNotification(
+                        event.ownerId,
+                        'premium_expiring',
+                        'Premium Expiring Soon',
+                        `Your event "${event.name}" premium status will expire in 24 hours. Renew now to maintain premium benefits.`,
+                        `/event/${event.event_id}/premium_payment`
+                    );
+                }
+            }
+            
+            if (expiringEvents.length > 0) {
+                console.log(`Notified ${expiringEvents.length} events expiring soon`);
+            }
+        } catch (error) {
+            console.error("Premium expiry scheduler error:", error);
+        }
+    });
+    
+    console.log("Earnings unlock, suspension, and premium expiry schedulers started");
 }
 
 // Routes

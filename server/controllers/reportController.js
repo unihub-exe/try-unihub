@@ -4,6 +4,7 @@ const User = require("../models/user");
 const Event = require("../models/event");
 const Community = require("../models/Community");
 const Blacklist = require("../models/Blacklist");
+const { sendAccountSuspensionEmail, sendReportActionEmail } = require("../utils/emailService");
 
 // Create a report
 exports.createReport = async (req, res) => {
@@ -140,6 +141,39 @@ exports.takeAction = async (req, res) => {
 
         // Create notification for reporter
         await Notification.create(reporterNotification);
+
+        // Send email to reporter
+        try {
+            const reporter = await User.findOne({ user_token: report.reporterId });
+            if (reporter && reporter.email) {
+                await sendReportActionEmail({
+                    email: reporter.email,
+                    name: reporter.displayName || reporter.username,
+                    reportedContent: report.reportedName,
+                    action: action === 'dismissed' ? 'No Action Required' : action === 'suspended' ? 'Content Suspended' : 'Content Removed',
+                    adminNotes
+                });
+            }
+        } catch (emailError) {
+            console.error("Error sending report action email:", emailError);
+        }
+
+        // Send suspension email if user was suspended
+        if (action === 'suspended' && report.reportType === 'user') {
+            try {
+                const suspendedUser = await User.findOne({ _id: report.reportedId });
+                if (suspendedUser && suspendedUser.email) {
+                    await sendAccountSuspensionEmail({
+                        email: suspendedUser.email,
+                        name: suspendedUser.displayName || suspendedUser.username,
+                        reason: report.reason,
+                        suspendedUntil: suspendedUser.suspendedUntil
+                    });
+                }
+            } catch (emailError) {
+                console.error("Error sending suspension email:", emailError);
+            }
+        }
 
         res.send({ msg: "Action taken successfully", report });
     } catch (error) {

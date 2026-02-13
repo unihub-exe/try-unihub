@@ -18,7 +18,7 @@ export default function AdminPayouts() {
   const fetchPayouts = async () => {
     try {
       const adminToken = getAdminToken();
-      const url = `${API_URL}/wallet/admin/payouts?status=${filter}`;
+      const url = `${API_URL}/admin/payouts?status=${filter}`;
       
       const response = await fetch(url, {
         headers: {
@@ -61,8 +61,8 @@ export default function AdminPayouts() {
     try {
       const adminToken = getAdminToken();
       const endpoint = confirmModal.type === "immediate" 
-        ? `${API_URL}/wallet/admin/payout/approve`
-        : `${API_URL}/wallet/admin/payout/reject`;
+        ? `${API_URL}/admin/payout/approve`
+        : `${API_URL}/admin/payout/reject`;
 
       const response = await fetch(endpoint, {
         method: "POST",

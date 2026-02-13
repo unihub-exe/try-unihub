@@ -549,6 +549,25 @@ const cancelEvent = async(req, res) => {
         event.cancelReason = reason;
         await event.save();
 
+        // Send cancellation emails to all participants
+        const { sendEventCancellationEmail } = require("../utils/emailService");
+        for (const participant of event.participants) {
+            try {
+                const participantUser = await User.findOne({ user_token: participant.id });
+                if (participantUser && participantUser.email) {
+                    await sendEventCancellationEmail({
+                        email: participantUser.email,
+                        name: participantUser.displayName || participantUser.username,
+                        eventName: event.name,
+                        reason,
+                        refundAmount: participant.amount_paid || 0
+                    });
+                }
+            } catch (emailError) {
+                console.error(`Error sending cancellation email to ${participant.email}:`, emailError);
+            }
+        }
+
         // Notify organizer
         await createNotification(
             organizer.user_token,

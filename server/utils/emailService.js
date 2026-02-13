@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const { generateTicketPDF, generateQRData } = require("./ticketService");
 
 let transporter;
 
@@ -306,22 +307,378 @@ exports.sendTicketEmail = (details, user) =>
 
 exports.getTransporter = getTransporter;
 
-// 1. add a delete button in the manage events page. but an organizer cannot delete an event if at least one person has bought a ticket. so when a ticket has been bought, the user will see cancel event instead of delete event. with which if they cancel the event then they will be informed  that a full refund will be sent from their wallet to the customers that bought tickets (organizers cannot withdraw money from their wallet until an hour after the event holds, but if the organizer had any amount (e.g 4000) in their wallet before an event was created and that event brings in some ticket sales of any amount (e.d 8000) the user can withdraw the previous amount but cannot withdraw the new amount until an hour after the event ends.
 
-// 2. fix the wallet page issues. also the wallet page for all users will contain their in app transactions and spending analytics. but for users with the organizer role, theirs will have a section (at the hero position) showing their wallet amount (generated from ticket sales) and a withdraw option, and also section to add their account details. revamp the ui of this page a bit
 
-// 3. look at the /admin pages. right now i beleive most of the information on their are mock information. change that. make it completely functional. also the delete function for events there is not functional. fix it
+// Send ticket email with PDF attachment
+async function sendTicketEmail(ticketData) {
+  try {
+    const {
+      email,
+      name,
+      eventName,
+      eventDate,
+      eventTime,
+      eventVenue,
+      ticketType,
+      price,
+      ticketId,
+      eventId,
+      userId
+    } = ticketData;
 
-// 4. in each community chat, user account and event details card (in the upcoming event library page) at the top add a report button. when users click this button, a modal will show up asking them what they want to report about the communit, user or event. then this report will be sent to the reports section of the admin page. here the admin can now delete the report (the reporter will be notified that the admin saw no reason to suspend or delete the account... think up something. THIS NOTIFICATION WILL BE IN APP USING THE NOTIFICATIONS MODAL),  suspend account/community (the reporter will also be informed) or delete account/community/event (the reporter will also be informed). anybody whose account was reporteed and any of the actions was taken agaianst them, when they try to login, they will be imnformed that they cant due to suspension or account deleteion. 
+    // Generate QR data
+    const qrData = generateQRData({ ticketId, eventId, userId });
 
-// SUSPENSION LASTS 48 HOURS. DELETION REMOVES THE ACCOUNT COMPLETELY FROM THE DATABASE AND BLACKLISTS THE EMAIL USED.
+    // Generate PDF ticket
+    const pdfBuffer = await generateTicketPDF({
+      ticketId,
+      eventName,
+      eventDate,
+      eventTime,
+      eventVenue,
+      attendeeName: name,
+      attendeeEmail: email,
+      ticketType,
+      price,
+      qrData
+    });
 
-// in community chats, just like if admins click on a user, they can assign roles, when a regular user click on another users name, they can report, follow or tag that user to their next text in community. the user tagged will get an in app notifictaion
+    const t = getTransporter();
+    const from = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "noreply@unihub.app";
 
-// 5. make the notification modal actually funtional, offering notifications for actions commited in app, like ticket buying, ticket sale, community tags, when an admin posts an event in communty, so on and so forth
+    const mailOptions = {
+      from: `"UniHub Events" <${from}>`,
+      to: email,
+      subject: `Your Ticket for ${eventName} 🎉`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+            .ticket-info { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4F46E5; }
+            .info-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+            .info-label { font-weight: bold; color: #6b7280; }
+            .info-value { color: #1f2937; }
+            .button { display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+            .highlight { color: #4F46E5; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 28px;">🎟️ Your Ticket is Ready!</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Get ready for an amazing experience</p>
+            </div>
+            
+            <div class="content">
+              <p>Hi <strong>${name}</strong>,</p>
+              
+              <p>Great news! Your ticket for <span class="highlight">${eventName}</span> has been confirmed. We're excited to see you there!</p>
+              
+              <div class="ticket-info">
+                <h3 style="margin-top: 0; color: #1f2937;">📅 Event Details</h3>
+                <div class="info-row">
+                  <span class="info-label">Event:</span>
+                  <span class="info-value">${eventName}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Date:</span>
+                  <span class="info-value">${eventDate}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Time:</span>
+                  <span class="info-value">${eventTime}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Venue:</span>
+                  <span class="info-value">${eventVenue}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Ticket Type:</span>
+                  <span class="info-value">${ticketType || 'General Admission'}</span>
+                </div>
+                ${price > 0 ? `
+                <div class="info-row">
+                  <span class="info-label">Amount Paid:</span>
+                  <span class="info-value" style="color: #10b981; font-weight: bold;">₦${price.toLocaleString()}</span>
+                </div>
+                ` : ''}
+                <div class="info-row" style="border-bottom: none;">
+                  <span class="info-label">Ticket ID:</span>
+                  <span class="info-value" style="font-family: monospace;">${ticketId.substring(0, 12).toUpperCase()}</span>
+                </div>
+              </div>
 
-// 6. make the payout requests page in /admin actually functional. normally, when a user asks for a payout, they should receive it on or before 48 hours, but in this payout page, the admins can push payment immediately, so the wait time is gone, leaving payout to paystack to perfomr
+              <h3 style="color: #1f2937;">📱 What to Bring</h3>
+              <ul style="color: #4b5563;">
+                <li>Your ticket (attached PDF or show on your phone)</li>
+                <li>Valid ID for verification</li>
+                <li>Arrive 15 minutes early for smooth check-in</li>
+              </ul>
 
-// 7. i noticed when a user tried to pay for an event ticket, the app tried to use stripe, paystack is our payment processor, make sure it is the only one used all over the app
+              <p style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <strong>⚠️ Important:</strong> Your ticket PDF is attached to this email. You can also access it anytime from your UniHub dashboard.
+              </p>
 
-// 8. to make an event premiuim, it costs a certain amount and events are premium for a certain amount of days. in the admin page, create a page where the admin can handle these logistics. this page will have a section for putting in the price per day for making an event premium, then the rest is calculated using that price. so when a user tries to make his event premium, he will choose the amount of days he wants his event to be premium, then the mount to be paid will be calculated, then he can pay that amount.  
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.FRONTEND_URL || 'https://unihub.com'}/users/dashboard" class="button">
+                  View in Dashboard
+                </a>
+              </div>
+
+              <p>If you have any questions, feel free to reach out to our support team.</p>
+              
+              <p>See you at the event! 🎉</p>
+              
+              <p style="margin-top: 30px;">
+                Best regards,<br>
+                <strong>The UniHub Team</strong>
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+              <p>© ${new Date().getFullYear()} UniHub. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      attachments: [
+        {
+          filename: `ticket-${ticketId.substring(0, 8)}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+
+    await t.sendMail(mailOptions);
+    console.log(`Ticket email sent to ${email}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending ticket email:", error);
+    throw error;
+  }
+}
+
+// Send event reminder email (24 hours before)
+async function sendEventReminderEmail(reminderData) {
+  const { email, name, eventName, eventDate, eventTime, eventVenue, eventId } = reminderData;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="margin: 0;">⏰ Event Reminder</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb;">
+          <p>Hi <strong>${name}</strong>,</p>
+          
+          <p>This is a friendly reminder that <strong>${eventName}</strong> is happening tomorrow!</p>
+          
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4F46E5;">
+            <h3 style="margin-top: 0;">📅 Event Details</h3>
+            <p><strong>Date:</strong> ${eventDate}</p>
+            <p><strong>Time:</strong> ${eventTime}</p>
+            <p><strong>Venue:</strong> ${eventVenue}</p>
+          </div>
+
+          <p style="background: #dbeafe; padding: 15px; border-radius: 8px;">
+            <strong>💡 Tip:</strong> Arrive 15 minutes early to avoid queues!
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://unihub.com'}/event/${eventId}" style="display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              View Event Details
+            </a>
+          </div>
+
+          <p>See you tomorrow! 🎉</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail(email, `Reminder: ${eventName} is Tomorrow!`, html);
+}
+
+// Send event cancellation email
+async function sendEventCancellationEmail(cancellationData) {
+  const { email, name, eventName, reason, refundAmount } = cancellationData;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="margin: 0;">❌ Event Cancelled</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb;">
+          <p>Hi <strong>${name}</strong>,</p>
+          
+          <p>We regret to inform you that <strong>${eventName}</strong> has been cancelled.</p>
+          
+          ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+          
+          ${refundAmount > 0 ? `
+          <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+            <h3 style="margin-top: 0; color: #065f46;">💰 Refund Processed</h3>
+            <p style="color: #065f46;">A full refund of <strong>₦${refundAmount.toLocaleString()}</strong> has been processed to your wallet.</p>
+          </div>
+          ` : ''}
+
+          <p>We apologize for any inconvenience this may have caused. We hope to see you at future events!</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://unihub.com'}/users/dashboard" style="display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              Browse Other Events
+            </a>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail(email, `Event Cancelled: ${eventName}`, html);
+}
+
+// Send account suspension email
+async function sendAccountSuspensionEmail(suspensionData) {
+  const { email, name, reason, suspendedUntil } = suspensionData;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="margin: 0;">⚠️ Account Suspended</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb;">
+          <p>Hi <strong>${name}</strong>,</p>
+          
+          <p>Your UniHub account has been temporarily suspended.</p>
+          
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="margin-top: 0; color: #92400e;">Suspension Details</h3>
+            <p style="color: #92400e;"><strong>Reason:</strong> ${reason}</p>
+            <p style="color: #92400e;"><strong>Suspended Until:</strong> ${new Date(suspendedUntil).toLocaleString()}</p>
+          </div>
+
+          <p>During this period, you will not be able to access your account. If you believe this is a mistake, please contact our support team.</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="mailto:support@unihub.com" style="display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail(email, 'Your UniHub Account Has Been Suspended', html);
+}
+
+// Send payout approval/rejection email
+async function sendPayoutStatusEmail(payoutData) {
+  const { email, name, amount, status, reason } = payoutData;
+  const isApproved = status === 'approved';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, ${isApproved ? '#10B981' : '#EF4444'} 0%, ${isApproved ? '#059669' : '#DC2626'} 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="margin: 0;">${isApproved ? '✅' : '❌'} Payout ${isApproved ? 'Approved' : 'Rejected'}</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb;">
+          <p>Hi <strong>${name}</strong>,</p>
+          
+          <p>Your payout request of <strong>₦${amount.toLocaleString()}</strong> has been <strong>${status}</strong>.</p>
+          
+          ${isApproved ? `
+          <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+            <p style="color: #065f46;">The funds will be transferred to your bank account within 24-48 hours.</p>
+          </div>
+          ` : `
+          <div style="background: #fee2e2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+            <p style="color: #991b1b;"><strong>Reason:</strong> ${reason || 'Please contact support for more information.'}</p>
+          </div>
+          `}
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://unihub.com'}/users/wallet" style="display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              View Wallet
+            </a>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail(email, `Payout ${isApproved ? 'Approved' : 'Rejected'}`, html);
+}
+
+// Send report action notification
+async function sendReportActionEmail(reportData) {
+  const { email, name, reportedContent, action, adminNotes } = reportData;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="margin: 0;">📋 Report Update</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb;">
+          <p>Hi <strong>${name}</strong>,</p>
+          
+          <p>Thank you for reporting <strong>${reportedContent}</strong>. Our moderation team has reviewed your report.</p>
+          
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4F46E5;">
+            <h3 style="margin-top: 0;">Action Taken</h3>
+            <p><strong>${action === 'dismissed' ? 'No Action Required' : action === 'suspended' ? 'Content Suspended' : 'Content Removed'}</strong></p>
+            ${adminNotes ? `<p style="color: #6b7280;">${adminNotes}</p>` : ''}
+          </div>
+
+          <p>We appreciate your help in keeping UniHub safe and welcoming for everyone.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail(email, 'Your Report Has Been Reviewed', html);
+}
+
+module.exports = {
+  sendEmail,
+  sendTicketEmail,
+  sendEventReminderEmail,
+  sendEventCancellationEmail,
+  sendAccountSuspensionEmail,
+  sendPayoutStatusEmail,
+  sendReportActionEmail,
+  sendCheckInEmail
+};

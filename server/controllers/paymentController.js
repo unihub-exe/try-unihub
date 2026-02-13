@@ -1,4 +1,5 @@
 const { sendTicket, sendTicketPdf, sendWhatsAppTicket } = require("./smsController");
+const { sendTicketEmail } = require("../utils/emailService");
 const express = require("express");
 const app = express();
 const User = require("../models/user");
@@ -233,8 +234,30 @@ const payment = async(req, res) => {
                 console.log(err);
             }
             if (check !== "alreadyregistered") {
+                // Send old format ticket (keep for compatibility)
                 sendTicket(Details);
                 sendWhatsAppTicket(Details);
+                
+                // Send new PDF ticket with QR code
+                try {
+                    await sendTicketEmail({
+                        email: docs[0].email,
+                        name: docs[0].username || docs[0].displayName,
+                        eventName: ev.name,
+                        eventDate: ev.date,
+                        eventTime: ev.time,
+                        eventVenue: ev.venue,
+                        ticketType: ticketType || "General Admission",
+                        price: product.price,
+                        ticketId: key,
+                        eventId: event.event_id,
+                        userId: user.user_id
+                    });
+                    console.log("PDF ticket sent successfully");
+                } catch (emailError) {
+                    console.error("Error sending PDF ticket:", emailError);
+                    // Don't fail the whole transaction if email fails
+                }
             }
         } else {
             status = "error";

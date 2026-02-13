@@ -14,6 +14,7 @@ const {
     getTestimonials,
 } = require("../controllers/adminController");
 const { getSettings, updateSettings } = require("../controllers/adminSettingsController");
+const { getAllPayouts, approvePayout, rejectPayout } = require("../controllers/adminPayoutController");
 const { authenticate, requireRole } = require("../middleware/auth");
 // const { sendTestMailHandler } = require("../controllers/smsController");
 
@@ -31,5 +32,10 @@ router.route("/testimonials").get(getTestimonials);
 
 // Settings routes
 router.route("/settings").get(getSettings).post(authenticate, requireRole("ADMIN"), updateSettings);
+
+// Payout management routes
+router.route("/payouts").get(authenticate, requireRole("ADMIN"), getAllPayouts);
+router.route("/payout/approve").post(authenticate, requireRole("ADMIN"), approvePayout);
+router.route("/payout/reject").post(authenticate, requireRole("ADMIN"), rejectPayout);
 
 module.exports = router;
