@@ -679,6 +679,5 @@ module.exports = {
   sendEventCancellationEmail,
   sendAccountSuspensionEmail,
   sendPayoutStatusEmail,
-  sendReportActionEmail,
-  sendCheckInEmail
+  sendReportActionEmail
 };
