@@ -322,10 +322,10 @@ export default function ManageEventPage() {
                         <button onClick={handleSave} className="px-6 py-3 bg-[color:var(--secondary-color)] text-sm text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
                             <FiSave className="text-lg" /> Save Changes
                         </button>
-                        <button onClick={handleCancelEvent} className="px-6 py-3 bg-yellow-500 text-sm text-white rounded-xl hover:shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
+                        <button onClick={() => setCancelModal(true)} className="px-6 py-3 bg-yellow-500 text-sm text-white rounded-xl hover:shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
                             <FiX className="text-lg" /> Cancel Event
                         </button>
-                        <button onClick={handleDeleteEvent} className="px-6 py-3 bg-red-500 text-sm text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
+                        <button onClick={() => setDeleteModal(true)} className="px-6 py-3 bg-red-500 text-sm text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 hover:-translate-y-1 font-bold transition-all flex items-center gap-2">
                             <FiTrash2 className="text-lg" /> Delete Event
                         </button>
                     </div>
@@ -698,6 +698,83 @@ export default function ManageEventPage() {
                     animation: fadeIn 0.4s ease-out forwards;
                 }
             `}</style>
+
+            {/* Cancel Event Modal */}
+            {cancelModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scaleIn">
+                        <div className="p-6 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                    <FiX size={24} />
+                                </div>
+                                <h2 className="text-2xl font-black">Cancel Event</h2>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <p className="text-gray-700 mb-4">
+                                Are you sure you want to cancel "{event.name}"?
+                            </p>
+                            <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4">
+                                ⚠️ All participants will be refunded automatically. This action cannot be undone.
+                            </p>
+
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                Cancellation Reason (required)
+                            </label>
+                            <textarea
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                                placeholder="Please provide a reason for cancelling this event..."
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none"
+                                rows="4"
+                            />
+
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => {
+                                        setCancelModal(false);
+                                        setCancelReason("");
+                                    }}
+                                    disabled={isProcessing}
+                                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Keep Event
+                                </button>
+                                <button
+                                    onClick={handleCancelEvent}
+                                    disabled={isProcessing || !cancelReason.trim()}
+                                    className="flex-1 px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FiX /> Cancel Event
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Event Modal */}
+            <ConfirmModal
+                isOpen={deleteModal}
+                onClose={() => setDeleteModal(false)}
+                onConfirm={handleDeleteEvent}
+                title="Delete Event"
+                message={`Are you sure you want to permanently delete "${event.name}"?\n\nThis will remove all event data and cannot be undone.`}
+                confirmText="Delete Event"
+                type="danger"
+                isLoading={isProcessing}
+            />
         </div>
     );
 }
