@@ -193,72 +193,60 @@ const postEvent = async(req, res) => {
     }
 
     if (adminId) {
-        Admin.updateOne({ admin_id: adminId }, {
-                $push: {
-                    eventCreated: {
-                        event_id: token,
-                        name: Name,
-                        venue: Venue,
-                        date: Date,
-                        time: Time,
-                        endDate: EndDate,
-                        endTime: EndTime,
-                        description: Desc,
-                        price: Price,
-                        profile: Profile == null ?
-                            "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg" :
-                            Profile,
-                        cover: Cover == null ?
-                            "https://eventplanning24x7.files.wordpress.com/2018/04/events.png" :
-                            Cover,
-                        organizer: organizerName,
-                        category: Category,
-                        address: Address,
-                        lat: Lat,
-                        lng: Lng,
-                    },
+        await Admin.updateOne({ admin_id: adminId }, {
+            $push: {
+                eventCreated: {
+                    event_id: token,
+                    name: Name,
+                    venue: Venue,
+                    date: Date,
+                    time: Time,
+                    endDate: EndDate,
+                    endTime: EndTime,
+                    description: Desc,
+                    price: Price,
+                    profile: Profile == null ?
+                        "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg" :
+                        Profile,
+                    cover: Cover == null ?
+                        "https://eventplanning24x7.files.wordpress.com/2018/04/events.png" :
+                        Cover,
+                    organizer: organizerName,
+                    category: Category,
+                    address: Address,
+                    lat: Lat,
+                    lng: Lng,
                 },
             },
-            function(err) {
-                if (err) {
-                    console.log(err);
-                }
-            }
-        );
+        });
     }
     if (userId) {
-        User.updateOne({ user_token: userId }, {
-                $push: {
-                    eventCreated: {
-                        event_id: token,
-                        name: Name,
-                        venue: Venue,
-                        date: Date,
-                        time: Time,
-                        endDate: EndDate,
-                        endTime: EndTime,
-                        description: Desc,
-                        price: Price,
-                        profile: Profile == null ?
-                            "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg" :
-                            Profile,
-                        cover: Cover == null ?
-                            "https://eventplanning24x7.files.wordpress.com/2018/04/events.png" :
-                            Cover,
-                        organizer: organizerName,
-                        category: Category,
-                        address: Address,
-                        lat: Lat,
-                        lng: Lng,
-                    },
+        await User.updateOne({ user_token: userId }, {
+            $push: {
+                eventCreated: {
+                    event_id: token,
+                    name: Name,
+                    venue: Venue,
+                    date: Date,
+                    time: Time,
+                    endDate: EndDate,
+                    endTime: EndTime,
+                    description: Desc,
+                    price: Price,
+                    profile: Profile == null ?
+                        "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg" :
+                        Profile,
+                    cover: Cover == null ?
+                        "https://eventplanning24x7.files.wordpress.com/2018/04/events.png" :
+                        Cover,
+                    organizer: organizerName,
+                    category: Category,
+                    address: Address,
+                    lat: Lat,
+                    lng: Lng,
                 },
             },
-            function(err) {
-                if (err) {
-                    console.log(err);
-                }
-            }
-        );
+        });
     }
 
     res.status(200).send({ msg: "event created", event_id: token });
