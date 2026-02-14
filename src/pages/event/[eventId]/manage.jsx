@@ -146,7 +146,7 @@ export default function ManageEventPage() {
     const addQuestion = () => {
         setForm(prev => ({
             ...prev,
-            registrationQuestions: [...prev.registrationQuestions, { question: "", type: "text", required: false }]
+            registrationQuestions: [...prev.registrationQuestions, { label: "", type: "text", required: false }]
         }));
     };
 
@@ -580,8 +580,8 @@ export default function ManageEventPage() {
                                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Question</label>
                                                     <input 
                                                         type="text" 
-                                                        value={q.question} 
-                                                        onChange={(e) => updateQuestion(index, "question", e.target.value)}
+                                                        value={q.label} 
+                                                        onChange={(e) => updateQuestion(index, "label", e.target.value)}
                                                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-2 focus:ring-blue-500/10 outline-none text-sm font-medium"
                                                         placeholder="e.g. Dietary restrictions?"
                                                     />

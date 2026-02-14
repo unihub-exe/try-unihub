@@ -126,9 +126,12 @@ export default function Payment() {
             }
 
             // Initialize Paystack payment
-            const response = await fetch(`${API_URL}/payment/wallet/initialize`, {
+            const response = await fetch(`${API_URL}/wallet/initialize`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${user_id}`
+                },
                 body: JSON.stringify({
                     email: userData.email,
                     amount: product.price,
@@ -144,11 +147,11 @@ export default function Payment() {
 
             const data = await response.json();
             
-            if (data.status === "success" && data.authorization_url) {
+            if (data.authorizationUrl) {
                 // Redirect to Paystack checkout
-                window.location.href = data.authorization_url;
+                window.location.href = data.authorizationUrl;
             } else {
-                showMessage("error", "Failed to initialize payment");
+                showMessage("error", data.msg || "Failed to initialize payment");
             }
         } catch (e) {
             console.error(e);
