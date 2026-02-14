@@ -243,7 +243,9 @@ const CreateEvent = () => {
                         // Redirect to premium payment if selected
                         router.push(`/event/${data.event_id}/premium_payment`);
                     } else {
-                        if (admin_id) {
+                        // Check current route to determine where to redirect
+                        const isAdminRoute = router.pathname.startsWith('/admin');
+                        if (isAdminRoute && admin_id) {
                             router.push("/admin/dashboard");
                         } else {
                             router.push("/users/dashboard");
