@@ -97,6 +97,18 @@ const postEvent = async(req, res) => {
         console.log("Saved::New Event::created.");
         if (global.io) global.io.emit("event_created", new_event);
 
+        // Auto-upgrade user to ORGANIZER role if they're creating their first event
+        if (userId) {
+            const userDoc = await User.findOne({ user_token: userId });
+            if (userDoc && userDoc.role === "ATTENDEE") {
+                await User.updateOne(
+                    { user_token: userId },
+                    { $set: { role: "ORGANIZER" } }
+                );
+                console.log(`User ${userId} upgraded to ORGANIZER role`);
+            }
+        }
+
         // Handle Recurring Events
         const repeatFrequency = req.body.repeatFrequency;
         const repeatCount = req.body.repeatCount ? parseInt(req.body.repeatCount) : 0;
