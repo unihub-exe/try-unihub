@@ -3,7 +3,6 @@ import { getUserToken } from "@/utils/getUserToken";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import StripeCheckout from "react-stripe-checkout";
 import { API_URL } from "@/utils/config";
 import { FiCheckCircle, FiChevronRight, FiCreditCard, FiLock, FiShield, FiXCircle } from "react-icons/fi";
 
@@ -108,47 +107,51 @@ export default function Payment() {
     }
     }, [name, price, event_id, router.query.type]);
 
-    const handleToken = async (event, token, addresses) => {
-        // Fetching user_token cookie value in user_id
+    const payWithPaystack = async () => {
         const user_id = getUserToken();
         const queryType = router.query.type ? decodeURIComponent(router.query.type) : "";
-
+        
         try {
-            const response = await fetch(
-                `${API_URL}/payment`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        token,
-                        product,
-                        addresses,
-                        user: { user_id },
-                        event: { event_id },
+            // Get user email
+            const userRes = await fetch(`${API_URL}/user/details`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_token: user_id }),
+            });
+            const userData = await userRes.json();
+            
+            if (!userData || !userData.email) {
+                showMessage("error", "Unable to fetch user details");
+                return;
+            }
+
+            // Initialize Paystack payment
+            const response = await fetch(`${API_URL}/payment/initialize-paystack`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: userData.email,
+                    amount: product.price,
+                    user_token: user_id,
+                    metadata: {
+                        event_id,
                         ticketType: queryType,
-                        answers: answers
-                    }),
-                }
-            );
+                        answers: JSON.stringify(answers),
+                        product: JSON.stringify(product)
+                    }
+                }),
+            });
+
             const data = await response.json();
-            console.log(data);
-            if (data.status === "success") {
-                shootConfetti();
-                showMessage("success", "Payment Successful. Your ticket has been issued.");
-                setTimeout(() => router.push("/users/dashboard"), 1500);
+            
+            if (data.status === "success" && data.authorization_url) {
+                // Redirect to Paystack checkout
+                window.location.href = data.authorization_url;
+            } else {
+                showMessage("error", "Failed to initialize payment");
             }
-            else if(data.status === "alreadyregistered"){
-                showMessage("error", "User is already registered.");
-                setTimeout(() => router.push("/users/dashboard"), 1500);
-            }
-            else {
-                console.error(`Failed with status code ${response.status}`);
-                showMessage("error", "Payment failed. Please try again.");
-            }
-        } catch (error) {
-            console.error(error);
+        } catch (e) {
+            console.error(e);
             showMessage("error", "Network error occurred.");
         }
     };
@@ -216,6 +219,50 @@ export default function Payment() {
                 showMessage("error", "Insufficient wallet balance.");
             } else {
                 showMessage("error", "Payment failed.");
+            }
+        } catch (e) {
+            console.error(e);
+            showMessage("error", "Network error occurred.");
+        }
+    };
+
+    // Check for Paystack callback
+    useEffect(() => {
+        const reference = router.query.reference;
+        if (reference && currentStep === 'payment') {
+            verifyPaystackPayment(reference);
+        }
+    }, [router.query.reference, currentStep]);
+
+    const verifyPaystackPayment = async (reference) => {
+        const user_id = getUserToken();
+        const queryType = router.query.type ? decodeURIComponent(router.query.type) : "";
+        
+        try {
+            const response = await fetch(`${API_URL}/payment`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    provider: "paystack",
+                    paystackReference: reference,
+                    product,
+                    user: { user_id },
+                    event: { event_id },
+                    ticketType: queryType,
+                    answers
+                }),
+            });
+            
+            const data = await response.json();
+            if (data.status === "success") {
+                shootConfetti();
+                showMessage("success", "Payment Successful. Your ticket has been issued.");
+                setTimeout(() => router.push("/users/dashboard"), 1500);
+            } else if (data.status === "alreadyregistered") {
+                showMessage("error", "User is already registered.");
+                setTimeout(() => router.push("/users/dashboard"), 1500);
+            } else {
+                showMessage("error", data.msg || "Payment verification failed.");
             }
         } catch (e) {
             console.error(e);
@@ -413,27 +460,12 @@ export default function Payment() {
                                         {isRequestFlow ? "Request to Join" : "Confirm Registration"}
                                     </button>
                                 ) : (
-                                    <StripeCheckout
-                                        stripeKey={process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY}
-                                        token={(token, addresses) => handleToken(event, token, addresses)}
-                                        amount={product.price * 100}
-                                        name={product.name}
-                                        currency="NGN"
-                                        description={`Payment for ${name}`}
+                                    <button 
+                                        onClick={payWithPaystack}
+                                        className="w-full py-4 bg-[color:var(--secondary-color)] text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
                                     >
-                                        <button className="w-full py-4 bg-[color:var(--secondary-color)] text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-                                            <FiCreditCard className="text-2xl" />
-                                            Pay ₦{Number(product.price).toLocaleString()}
-                                        </button>
-                                    </StripeCheckout>
-                                )}
-                                
-                                {Number(product.price) > 0 && (
-                                    <button
-                                        onClick={payWithWallet}
-                                        className="w-full mt-3 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors"
-                                    >
-                                        Pay with Wallet
+                                        <FiCreditCard className="text-2xl" />
+                                        Pay ₦{Number(product.price).toLocaleString()} with Paystack
                                     </button>
                                 )}
                                 
