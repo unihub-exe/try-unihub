@@ -126,7 +126,7 @@ export default function Payment() {
             }
 
             // Initialize Paystack payment
-            const response = await fetch(`${API_URL}/payment/initialize-paystack`, {
+            const response = await fetch(`${API_URL}/payment/wallet/initialize`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

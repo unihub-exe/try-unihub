@@ -359,7 +359,9 @@ app.post("/upload/image", upload.single("file"), (req, res) => {
         if (!req.file) {
             return res.status(400).json({ error: "No file uploaded" });
         }
-        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        // Use HTTPS in production, HTTP in development
+        const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+        const baseUrl = `${protocol}://${req.get("host")}`;
         res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
     } catch (error) {
         console.error("Upload error:", error);

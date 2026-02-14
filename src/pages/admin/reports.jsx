@@ -17,7 +17,10 @@ export default function AdminReports() {
   const fetchReports = async () => {
     try {
       const adminToken = getAdminToken();
+      console.log("Admin token:", adminToken ? "Present" : "Missing");
+      
       const url = filter === "all" ? `${API_URL}/reports/all` : `${API_URL}/reports/all?status=${filter}`;
+      console.log("Fetching from:", url);
       
       const response = await fetch(url, {
         headers: {
@@ -25,9 +28,15 @@ export default function AdminReports() {
         },
       });
 
+      console.log("Response status:", response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log("Reports received:", data.length);
         setReports(data);
+      } else {
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
       }
     } catch (error) {
       console.error("Error fetching reports:", error);

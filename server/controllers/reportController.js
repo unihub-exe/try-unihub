@@ -13,7 +13,10 @@ exports.createReport = async (req, res) => {
         const reporterId = req.body.reporterId || req.user?.user_token;
         const reporterName = req.body.reporterName;
 
+        console.log("Creating report:", { reportType, reportedId, reportedName, reason, reporterId, reporterName });
+
         if (!reportType || !reportedId || !reportedName || !reason || !reporterId || !reporterName) {
+            console.log("Missing fields:", { reportType, reportedId, reportedName, reason, reporterId, reporterName });
             return res.status(400).send({ msg: "Missing required fields" });
         }
 
@@ -26,10 +29,11 @@ exports.createReport = async (req, res) => {
             reason
         });
 
+        console.log("Report created successfully:", report._id);
         res.status(201).send({ msg: "Report submitted successfully", report });
     } catch (error) {
         console.error("Create report error:", error);
-        res.status(500).send({ msg: "Server error" });
+        res.status(500).send({ msg: "Server error", error: error.message });
     }
 };
 
@@ -39,11 +43,13 @@ exports.getAllReports = async (req, res) => {
         const { status } = req.query;
         const filter = status ? { status } : {};
         
+        console.log("Fetching reports with filter:", filter);
         const reports = await Report.find(filter).sort({ createdAt: -1 });
+        console.log(`Found ${reports.length} reports`);
         res.send(reports);
     } catch (error) {
         console.error("Get reports error:", error);
-        res.status(500).send({ msg: "Server error" });
+        res.status(500).send({ msg: "Server error", error: error.message });
     }
 };
 

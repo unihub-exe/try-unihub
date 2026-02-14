@@ -179,13 +179,6 @@ function AdminEventPage() {
                                 <h3 className="font-bold text-gray-900 mb-6 text-xl">Admin Actions</h3>
                                 <div className="space-y-3">
                                     <button 
-                                        onClick={() => router.push(`/event/${eventData.event_id}/registration`)} 
-                                        className="w-full py-4 bg-[color:var(--secondary-color)] text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <FiUsers className="text-xl" />
-                                        View Registrations
-                                    </button>
-                                    <button 
                                         onClick={share} 
                                         className="w-full py-4 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
                                     >
