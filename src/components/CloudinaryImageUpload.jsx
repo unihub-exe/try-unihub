@@ -3,25 +3,26 @@ import { FiUpload, FiCheck, FiAlertCircle } from "react-icons/fi";
 
 /**
  * CloudinaryImageUpload Component
- * Handles async image uploads to Cloudinary with background processing
+ * Handles async image uploads to Cloudinary with immediate preview and background WebP optimization
  * 
  * @param {Object} props
- * @param {string} props.userId - User ID to associate with the upload
+ * @param {string} props.eventId - Event ID to associate with the upload
+ * @param {string} props.imageType - Type of image: 'cover' or 'profile'
  * @param {string} props.uploadPreset - Cloudinary upload preset name
- * @param {string} props.currentImagePublicId - Current image public_id (for deletion)
- * @param {Function} props.onUploadStart - Callback when upload starts
- * @param {Function} props.onUploadComplete - Callback when upload completes (optional)
+ * @param {string} props.currentImageUrl - Current image URL (for preview)
+ * @param {Function} props.onUploadComplete - Callback when immediate URL is available
  */
 export default function CloudinaryImageUpload({
-    userId,
+    eventId,
+    imageType, // 'cover' or 'profile'
     uploadPreset,
-    currentImagePublicId = null,
-    onUploadStart = () => {},
+    currentImageUrl = null,
     onUploadComplete = () => {},
 }) {
     const [uploading, setUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [error, setError] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(currentImageUrl);
     const fileInputRef = useRef(null);
 
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "df3zptxqc";
@@ -40,7 +41,7 @@ export default function CloudinaryImageUpload({
         }
 
         // Validate file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
             setError("Image size must be less than 10MB");
             return;
@@ -50,23 +51,23 @@ export default function CloudinaryImageUpload({
         setError(null);
         setUploadSuccess(false);
 
+        // Show local preview immediately
+        const localPreview = URL.createObjectURL(file);
+        setPreviewUrl(localPreview);
+
         try {
             // Prepare form data
             const formData = new FormData();
             formData.append("file", file);
             formData.append("upload_preset", uploadPreset);
             
-            // Add context data for webhook processing
-            const contextData = {
-                userId: userId,
-            };
+            // Add context for webhook processing
+            formData.append("context", `eventId=${eventId}|imageType=${imageType}`);
             
-            // Include old public_id if exists (for deletion)
-            if (currentImagePublicId) {
-                contextData.oldPublicId = currentImagePublicId;
-            }
-            
-            formData.append("context", `userId=${userId}|oldPublicId=${currentImagePublicId || ""}`);
+            // Configure eager transformation for WebP conversion
+            // This tells Cloudinary to create a WebP version in the background
+            formData.append("eager", "f_webp,q_auto:good");
+            formData.append("notification_url", "https://try-unihub.vercel.app/api/webhooks/cloudinary");
 
             // Upload to Cloudinary
             const response = await fetch(
@@ -83,17 +84,21 @@ export default function CloudinaryImageUpload({
 
             const data = await response.json();
 
-            // Show success message
+            // Use the immediate secure_url (original format - JPG/PNG)
+            const immediateUrl = data.secure_url;
+            
+            setPreviewUrl(immediateUrl);
             setUploadSuccess(true);
             setUploading(false);
 
-            // Notify parent component
-            onUploadStart(data);
-
-            // Optional: Call completion callback after a delay
-            setTimeout(() => {
-                onUploadComplete(data);
-            }, 2000);
+            // Notify parent component with immediate URL
+            // User can save the event with this URL
+            // WebP version will be swapped in background via webhook
+            onUploadComplete({
+                url: immediateUrl,
+                publicId: data.public_id,
+                imageType: imageType,
+            });
 
             // Reset success message after 5 seconds
             setTimeout(() => {
@@ -104,6 +109,7 @@ export default function CloudinaryImageUpload({
             console.error("Upload error:", err);
             setError(err.message || "Upload failed. Please try again.");
             setUploading(false);
+            setPreviewUrl(currentImageUrl); // Revert to original
         }
     };
 
@@ -116,6 +122,22 @@ export default function CloudinaryImageUpload({
 
     return (
         <div className="w-full">
+            {/* Image Preview */}
+            {previewUrl && (
+                <div className="mb-4 relative rounded-xl overflow-hidden border-2 border-gray-200">
+                    <img 
+                        src={previewUrl} 
+                        alt="Preview" 
+                        className="w-full h-48 object-cover"
+                    />
+                    {uploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -147,7 +169,7 @@ export default function CloudinaryImageUpload({
                 ) : (
                     <>
                         <FiUpload className="text-xl" />
-                        <span>Upload Image</span>
+                        <span>{previewUrl ? 'Change Image' : 'Upload Image'}</span>
                     </>
                 )}
             </button>
@@ -158,10 +180,10 @@ export default function CloudinaryImageUpload({
                     <FiCheck className="text-green-600 text-xl shrink-0 mt-0.5" />
                     <div>
                         <p className="font-semibold text-green-900">
-                            Success! We are processing your image in the background
+                            Image uploaded! You can save now.
                         </p>
                         <p className="text-sm text-green-700 mt-1">
-                            Your image is being converted to WebP format. You can navigate away and it will be updated automatically.
+                            We're optimizing your image to WebP format in the background. It will be automatically updated.
                         </p>
                     </div>
                 </div>
@@ -169,7 +191,7 @@ export default function CloudinaryImageUpload({
 
             {/* Error message */}
             {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in fade-in-from-top-2">
                     <FiAlertCircle className="text-red-600 text-xl shrink-0 mt-0.5" />
                     <div>
                         <p className="font-semibold text-red-900">Upload Failed</p>
@@ -180,7 +202,7 @@ export default function CloudinaryImageUpload({
 
             {/* Info text */}
             <p className="mt-3 text-xs text-gray-500 text-center">
-                Supported formats: JPG, PNG, GIF. Max size: 10MB
+                Supported: JPG, PNG, GIF • Max: 10MB • Auto-optimized to WebP
             </p>
         </div>
     );

@@ -3,7 +3,7 @@ import { addWebhookLog } from "./cloudinary-logs";
 
 /**
  * Cloudinary Webhook Handler
- * Handles async upload notifications from Cloudinary
+ * Handles async upload notifications and eager transformations from Cloudinary
  * Verifies signature, processes WebP conversions, and updates database
  */
 
@@ -32,10 +32,6 @@ async function getRawBody(req) {
 
 /**
  * Verify Cloudinary webhook signature
- * @param {string} body - Raw request body
- * @param {string} timestamp - X-Cld-Timestamp header
- * @param {string} signature - X-Cld-Signature header
- * @returns {boolean} - True if signature is valid
  */
 function verifySignature(body, timestamp, signature) {
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
@@ -45,13 +41,11 @@ function verifySignature(body, timestamp, signature) {
         return false;
     }
 
-    // Cloudinary signature format: SHA256(body + timestamp + api_secret)
     const expectedSignature = crypto
         .createHash("sha256")
         .update(body + timestamp + apiSecret)
         .digest("hex");
 
-    // Use timing-safe comparison to prevent timing attacks
     return crypto.timingSafeEqual(
         Buffer.from(signature),
         Buffer.from(expectedSignature)
@@ -60,7 +54,6 @@ function verifySignature(body, timestamp, signature) {
 
 /**
  * Delete old Cloudinary asset
- * @param {string} publicId - Cloudinary public_id to delete
  */
 async function deleteOldAsset(publicId) {
     try {
@@ -82,34 +75,55 @@ async function deleteOldAsset(publicId) {
 }
 
 /**
- * Update user profile image in database
- * @param {string} userId - User ID
- * @param {string} imageUrl - New image URL
+ * Update event images in database
  */
-async function updateDatabase(userId, imageUrl) {
-    // TODO: Implement your database update logic here
-    // Example:
-    // const User = require("@/models/User");
-    // await User.findByIdAndUpdate(userId, { avatar: imageUrl });
-    
-    console.log(`[PLACEHOLDER] Update database for user ${userId} with image ${imageUrl}`);
-    
-    // For now, just log the action
-    // Replace this with your actual database update code
-    return { success: true, userId, imageUrl };
+async function updateEventImages(eventId, imageType, webpUrl, originalPublicId) {
+    try {
+        // Connect to MongoDB
+        const mongoose = require("mongoose");
+        
+        if (mongoose.connection.readyState !== 1) {
+            await mongoose.connect(process.env.MONGO_ATLAS_URI || process.env.MONGO_URI);
+        }
+
+        const Event = require("../../../server/models/event");
+        
+        const updateField = imageType === 'cover' ? 'cover' : 'profile';
+        
+        const result = await Event.findOneAndUpdate(
+            { event_id: eventId },
+            { [updateField]: webpUrl },
+            { new: true }
+        );
+
+        if (result) {
+            console.log(`Updated ${imageType} for event ${eventId} to WebP:`, webpUrl);
+            
+            // Delete the original non-WebP file
+            if (originalPublicId) {
+                await deleteOldAsset(originalPublicId);
+            }
+            
+            return { success: true, eventId, imageType, webpUrl };
+        } else {
+            console.warn(`Event ${eventId} not found for image update`);
+            return { success: false, error: "Event not found" };
+        }
+    } catch (error) {
+        console.error(`Failed to update event ${eventId}:`, error);
+        throw error;
+    }
 }
 
 /**
  * Main webhook handler
  */
 export default async function handler(req, res) {
-    // Only accept POST requests
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method not allowed" });
     }
 
     try {
-        // Get raw body and headers
         const rawBody = await getRawBody(req);
         const timestamp = req.headers["x-cld-timestamp"];
         const signature = req.headers["x-cld-signature"];
@@ -120,7 +134,6 @@ export default async function handler(req, res) {
             addWebhookLog({
                 status: "error",
                 error: "Missing signature headers",
-                headers: req.headers,
             });
             return res.status(401).json({ error: "Missing signature headers" });
         }
@@ -132,71 +145,79 @@ export default async function handler(req, res) {
             addWebhookLog({
                 status: "error",
                 error: "Invalid signature",
-                timestamp,
             });
             return res.status(401).json({ error: "Invalid signature" });
         }
 
-        // Parse the verified body
         const payload = JSON.parse(rawBody);
         
         console.log("Cloudinary webhook received:", {
             notification_type: payload.notification_type,
             public_id: payload.public_id,
+            eager: payload.eager?.length || 0,
         });
 
         addWebhookLog({
             status: "received",
             notification_type: payload.notification_type,
             public_id: payload.public_id,
-            secure_url: payload.secure_url,
+            has_eager: !!payload.eager,
         });
 
-        // Handle successful upload
-        if (payload.notification_type === "upload" || payload.notification_type === "success") {
-            const { secure_url, public_id, context } = payload;
+        // Handle eager transformation completion (WebP conversion)
+        if (payload.eager && Array.isArray(payload.eager) && payload.eager.length > 0) {
+            const webpTransformation = payload.eager.find(t => 
+                t.secure_url && t.secure_url.includes('.webp')
+            );
 
-            // Extract userId from context (you'll need to pass this during upload)
-            const userId = context?.custom?.userId || context?.userId;
-            const oldPublicId = context?.custom?.oldPublicId || context?.oldPublicId;
+            if (webpTransformation) {
+                const webpUrl = webpTransformation.secure_url;
+                const originalPublicId = payload.public_id;
+                
+                // Parse context to get eventId and imageType
+                const context = payload.context?.custom || {};
+                const eventId = context.eventId;
+                const imageType = context.imageType; // 'cover' or 'profile'
 
-            if (!userId) {
-                console.warn("No userId found in webhook payload context");
-                return res.status(200).json({ 
-                    message: "Webhook received but no userId to update" 
+                console.log("WebP transformation complete:", {
+                    eventId,
+                    imageType,
+                    webpUrl,
+                    originalPublicId,
                 });
-            }
 
-            // Update database with new image URL
-            await updateDatabase(userId, secure_url);
+                if (eventId && imageType) {
+                    await updateEventImages(eventId, imageType, webpUrl, originalPublicId);
+                    
+                    addWebhookLog({
+                        status: "success",
+                        action: "webp_swap",
+                        eventId,
+                        imageType,
+                        webpUrl,
+                        originalPublicId,
+                    });
 
-            // Delete old asset if it exists
-            if (oldPublicId && oldPublicId !== public_id) {
-                try {
-                    await deleteOldAsset(oldPublicId);
-                } catch (error) {
-                    // Log but don't fail the webhook if deletion fails
-                    console.error("Failed to delete old asset:", error);
+                    return res.status(200).json({
+                        message: "WebP transformation processed",
+                        eventId,
+                        imageType,
+                        webpUrl,
+                    });
+                } else {
+                    console.warn("Missing eventId or imageType in context");
                 }
             }
+        }
 
-            addWebhookLog({
-                status: "success",
-                notification_type: payload.notification_type,
-                public_id,
-                secure_url,
-                userId,
-                oldPublicId,
-            });
-
+        // Handle initial upload (return immediate URL)
+        if (payload.notification_type === "upload" || payload.notification_type === "success") {
             return res.status(200).json({
-                message: "Webhook processed successfully",
-                public_id,
-                secure_url,
+                message: "Upload notification received",
+                public_id: payload.public_id,
             });
         }
 
-        // Handle other notification types
         return res.status(200).json({
             message: "Webhook received",
             notification_type: payload.notification_type,
@@ -204,6 +225,11 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("Webhook processing error:", error);
+        addWebhookLog({
+            status: "error",
+            error: error.message,
+            stack: error.stack,
+        });
         return res.status(500).json({ 
             error: "Internal server error",
             message: error.message 

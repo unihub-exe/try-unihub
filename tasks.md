@@ -221,3 +221,25 @@ For a **true MVP** that can launch, you MUST have:
 These 5 features are **non-negotiable** for launch. Everything else can be added post-launch based on user feedback.
 
 Would you like me to start implementing these critical features now?
+
+<!-- Task: Fix the Image Upload flow to allow immediate preview and "Save" while processing optimization in the background.
+
+The Problem: Currently, the app waits for processing or fails because the URL isn't returned immediately. I need a "temporary high-quality" to "permanent WebP" swap logic.
+
+The Solution Requirements:
+
+Frontend: Modify the upload logic so it accepts the initial secure_url (the JPG/PNG) from Cloudinary immediately. Allow the user to save the event with these URLs.
+
+Webhook Logic (/api/webhooks/cloudinary):
+
+Listen for the eager transformation notification from Cloudinary.
+
+When the WebP version is finished, Cloudinary will send the new .webp URL in the eager array of the JSON body.
+
+Database Swap: Find the event in the database using the public_id and replace the old JPG URL with the new WebP URL.
+
+Cleanup: After the database is updated, use cloudinary.v2.uploader.destroy to delete the original file (the one that isn't WebP) to save space.
+
+Validation: Ensure the code handles two images (Cover and Profile) by checking the public_id or context sent by Cloudinary.
+
+my  cloudinary notification url - "https://try-unihub.vercel.app/api/webhooks/cloudinary" -->
