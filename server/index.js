@@ -18,16 +18,29 @@ const rateLimit = require("express-rate-limit");
 
 // CORS Configuration
 const corsOptions = {
-    origin: [
-        "http://localhost:3000",
-        "https://try-unihub.vercel.app",
-        "https://unihub-test.vercel.app",
-        "https://*.vercel.app",
-        "http://localhost:3001"
-    ],
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://try-unihub.vercel.app",
+            "https://unihub-test.vercel.app"
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Check if origin is in allowed list or is a vercel.app subdomain
+        if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
+    maxAge: 86400 // 24 hours
 };
 
 // Middleware
@@ -35,7 +48,12 @@ app.use(helmet({
     contentSecurityPolicy: false, // Disabled for Next.js compatibility
     crossOriginEmbedderPolicy: false
 }));
+
+// Apply CORS before other middleware
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
@@ -271,6 +289,23 @@ const userDashboardRoutes = require("./routes/userDashboardRoutes");
 const userInteractionRoutes = require("./routes/userInteractionRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const walletRoutes = require("./routes/walletRoutes");
+
+// Health check endpoint
+app.get("/", (req, res) => {
+    res.json({ 
+        status: "ok", 
+        message: "UniHub API is running",
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.get("/health", (req, res) => {
+    res.json({ 
+        status: "healthy", 
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
