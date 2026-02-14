@@ -354,29 +354,76 @@ const getUserEvents = async(req, res) => {
             cancelled: { $ne: true }
         }).sort({ date: 1 });
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
 
         const upcoming = [];
         const live = [];
         const past = [];
 
         events.forEach(event => {
-            if (!event.date) return;
-            const parts = event.date.split('/');
-            if (parts.length !== 3) return;
-
-            const eventDate = new Date(parts[2], parts[1] - 1, parts[0]);
-
-            if (eventDate < today) {
+            if (!event.date || !event.time) return;
+            
+            // Parse date (DD/MM/YYYY)
+            const dateParts = event.date.split('/');
+            if (dateParts.length !== 3) return;
+            
+            // Parse time (e.g., "3:00 PM" or "15:00")
+            const timeStr = event.time.trim();
+            let hours = 0, minutes = 0;
+            
+            // Handle 12-hour format (3:00 PM)
+            if (timeStr.includes('AM') || timeStr.includes('PM')) {
+                const [time, period] = timeStr.split(' ');
+                const [h, m] = time.split(':').map(Number);
+                hours = period === 'PM' && h !== 12 ? h + 12 : (period === 'AM' && h === 12 ? 0 : h);
+                minutes = m || 0;
+            } else {
+                // Handle 24-hour format
+                const [h, m] = timeStr.split(':').map(Number);
+                hours = h;
+                minutes = m || 0;
+            }
+            
+            // Create event start datetime
+            const eventStart = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], hours, minutes);
+            
+            // Create event end datetime
+            let eventEnd = new Date(eventStart);
+            if (event.endDate && event.endTime) {
+                const endDateParts = event.endDate.split('/');
+                const endTimeStr = event.endTime.trim();
+                let endHours = 0, endMinutes = 0;
+                
+                if (endTimeStr.includes('AM') || endTimeStr.includes('PM')) {
+                    const [time, period] = endTimeStr.split(' ');
+                    const [h, m] = time.split(':').map(Number);
+                    endHours = period === 'PM' && h !== 12 ? h + 12 : (period === 'AM' && h === 12 ? 0 : h);
+                    endMinutes = m || 0;
+                } else {
+                    const [h, m] = endTimeStr.split(':').map(Number);
+                    endHours = h;
+                    endMinutes = m || 0;
+                }
+                
+                eventEnd = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0], endHours, endMinutes);
+            } else {
+                // If no end time, assume event lasts 3 hours
+                eventEnd.setHours(eventEnd.getHours() + 3);
+            }
+            
+            // Categorize based on current time
+            if (now < eventStart) {
+                // Event hasn't started yet
+                upcoming.push(event);
+            } else if (now >= eventStart && now <= eventEnd) {
+                // Event is currently happening
+                live.push(event);
+            } else {
+                // Event has ended
                 // Only show past events if user was a participant (registered)
                 if (event.participants && event.participants.some(p => p.id === userId)) {
                     past.push(event);
                 }
-            } else if (eventDate.getTime() === today.getTime()) {
-                live.push(event);
-            } else {
-                upcoming.push(event);
             }
         });
 
