@@ -204,7 +204,7 @@ const CreateEvent = () => {
         };
 
         try {
-            const response = await fetch(`${apiUrl}/post/event`, {
+            const response = await fetch(`${apiUrl}/event/post/event`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
