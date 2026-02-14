@@ -93,13 +93,9 @@ const postEvent = async(req, res) => {
     });
 
     try {
-        new_event.save((error, success) => {
-            if (error) console.log(error);
-            else {
-                console.log("Saved::New Event::created.");
-                if (global.io) global.io.emit("event_created", new_event);
-            }
-        });
+        await new_event.save();
+        console.log("Saved::New Event::created.");
+        if (global.io) global.io.emit("event_created", new_event);
 
         // Handle Recurring Events
         const repeatFrequency = req.body.repeatFrequency;
