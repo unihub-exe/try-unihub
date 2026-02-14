@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const fs = require("fs");
 const cron = require("node-cron");
 
 const app = express();
@@ -289,7 +290,12 @@ const { v4: uuidv4 } = require("uuid");
 // Secure file upload configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "server/uploads/");
+        const uploadDir = path.join(__dirname, "uploads");
+        // Ensure directory exists
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
@@ -314,11 +320,16 @@ const upload = multer({
 });
 
 app.post("/upload/image", upload.single("file"), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
+    } catch (error) {
+        console.error("Upload error:", error);
+        res.status(500).json({ error: "Upload failed", message: error.message });
     }
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
 });
 
 // Serve uploaded files securely
@@ -326,6 +337,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res) => {
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.setHeader("Cache-Control", "public, max-age=31536000");
+        res.setHeader("Access-Control-Allow-Origin", "*");
     }
 }));
 

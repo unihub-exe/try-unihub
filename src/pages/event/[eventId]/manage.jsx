@@ -234,9 +234,12 @@ export default function ManageEventPage() {
             if (res.ok) {
                 setMessage({ type: "success", text: data.msg || "Event cancelled successfully. Refunds processed." });
                 setCancelModal(false);
+                setCancelReason("");
                 setTimeout(() => router.push("/users/dashboard"), 2000);
             } else {
                 setMessage({ type: "error", text: data.msg || "Failed to cancel event" });
+                setCancelModal(false);
+                setCancelReason("");
             }
         } catch (err) {
             console.error(err);

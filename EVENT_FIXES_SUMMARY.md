@@ -1,6 +1,40 @@
 # Event Management Fixes - Summary
 
-## Issues Fixed
+## Issues Fixed (Round 2)
+
+### 1. Cancel Modal Not Closing
+**Problem:** After cancelling an event and providing a reason, the modal stayed open causing confusion.
+
+**Solution:** 
+- Added `setCancelReason("")` to clear the reason field when modal closes
+- Modal now closes immediately after successful cancellation or error
+- User gets clear feedback message before redirect
+
+### 2. Event Date/Time Structure
+**Problem:** Event creation had "Start Date & Time" then "End Date & Time" which was confusing.
+
+**Solution:** 
+- Changed to: "Event Date" (single date picker)
+- Then: "Start Time" and "End Time" (two time pickers side by side)
+- End time is optional and marked as such
+- More intuitive for single-day events
+- Backend still stores as date, time, endDate, endTime for flexibility
+
+### 3. Image Upload Failures (500 & CORS Errors)
+**Problem:** 
+- Upload endpoint returned 500 errors
+- CORS policy blocked requests
+- Upload directory path was incorrect
+
+**Solution:**
+- Fixed upload directory path from `"server/uploads/"` to `path.join(__dirname, "uploads")`
+- Added automatic directory creation if it doesn't exist
+- Added proper error handling with try-catch
+- Added CORS header to uploads static serving: `Access-Control-Allow-Origin: *`
+- Created uploads directory with .gitkeep file
+- Updated .gitignore to ignore uploaded files but keep directory structure
+
+## Issues Fixed (Round 1)
 
 ### 1. Delete Event 400 Error
 **Problem:** When trying to delete an event with sold tickets, the API returned a 400 error but the frontend didn't show the specific reason.
