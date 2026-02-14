@@ -14,6 +14,8 @@ const postEvent = async(req, res) => {
     const Venue = req.body.venue;
     const Date = req.body.date;
     const Time = req.body.time;
+    const EndDate = req.body.endDate;
+    const EndTime = req.body.endTime;
     const Desc = req.body.description;
     const Price = req.body.price;
     const Profile = req.body.profile;
@@ -68,6 +70,8 @@ const postEvent = async(req, res) => {
         venue: Venue,
         date: Date,
         time: Time,
+        endDate: EndDate,
+        endTime: EndTime,
         description: Desc,
         price: Price,
         profile: Profile,
@@ -133,6 +137,8 @@ const postEvent = async(req, res) => {
                         venue: Venue,
                         date: nextDateStr,
                         time: Time,
+                        endDate: EndDate,
+                        endTime: EndTime,
                         description: Desc,
                         price: Price,
                         profile: Profile,
@@ -162,6 +168,8 @@ const postEvent = async(req, res) => {
                         venue: Venue,
                         date: nextDateStr,
                         time: Time,
+                        endDate: EndDate,
+                        endTime: EndTime,
                         description: Desc,
                         price: Price,
                         profile: recurringEvent.profile || "https://i.etsystatic.com/15907303/r/il/c8acad/1940223106/il_794xN.1940223106_9tfg.jpg",
@@ -197,6 +205,8 @@ const postEvent = async(req, res) => {
                         venue: Venue,
                         date: Date,
                         time: Time,
+                        endDate: EndDate,
+                        endTime: EndTime,
                         description: Desc,
                         price: Price,
                         profile: Profile == null ?
@@ -229,6 +239,8 @@ const postEvent = async(req, res) => {
                         venue: Venue,
                         date: Date,
                         time: Time,
+                        endDate: EndDate,
+                        endTime: EndTime,
                         description: Desc,
                         price: Price,
                         profile: Profile == null ?
@@ -269,6 +281,8 @@ const updateEvent = async(req, res) => {
         "lng",
         "date",
         "time",
+        "endDate",
+        "endTime",
         "description",
         "price",
         "profile",
@@ -305,7 +319,10 @@ const updateEvent = async(req, res) => {
 
 const allEvents = async(req, res) => {
     try {
-        const events = await Event.find({ visibility: { $ne: "private" } })
+        const events = await Event.find({ 
+            visibility: { $ne: "private" },
+            cancelled: { $ne: true }
+        })
             .sort({ isPremium: -1, _id: -1 });
 
         // Filter out past events
@@ -332,12 +349,13 @@ const getUserEvents = async(req, res) => {
     if (!userId) return res.status(400).send({ msg: "User ID required" });
 
     try {
-        // Find events where user is a participant or owner
+        // Find events where user is a participant or owner (exclude cancelled/deleted)
         const events = await Event.find({
             $or: [
                 { "participants.id": userId },
                 { ownerId: userId }
-            ]
+            ],
+            cancelled: { $ne: true }
         }).sort({ date: 1 });
 
         const today = new Date();
@@ -355,7 +373,10 @@ const getUserEvents = async(req, res) => {
             const eventDate = new Date(parts[2], parts[1] - 1, parts[0]);
 
             if (eventDate < today) {
-                past.push(event);
+                // Only show past events if user was a participant (registered)
+                if (event.participants && event.participants.some(p => p.id === userId)) {
+                    past.push(event);
+                }
             } else if (eventDate.getTime() === today.getTime()) {
                 live.push(event);
             } else {

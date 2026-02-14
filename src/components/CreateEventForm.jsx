@@ -43,6 +43,7 @@ const CreateEvent = () => {
         lng: "",
         category: "",
         datetime: "",
+        endDatetime: "",
         profile: "",
         cover: "",
         description: "",
@@ -146,6 +147,22 @@ const CreateEvent = () => {
         const date = `${formattedDate}`;
         const time = `${formattedTime}`;
 
+        // Format end date and time if provided
+        let endDate, endTime;
+        if (formData.endDatetime) {
+            const endDatetemp = new Date(formData.endDatetime);
+            endDate = endDatetemp.toLocaleDateString("en-IN", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+            });
+            endTime = endDatetemp.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: true,
+            });
+        }
+
         // Calculate legacy price (lowest) and capacity (total)
         const minPrice =
             formData.ticketTypes.length > 0 ?
@@ -166,6 +183,8 @@ const CreateEvent = () => {
 
             date: date,
             time: time,
+            endDate: endDate,
+            endTime: endTime,
             description: formData.description,
             category: formData.category || undefined,
             price: minPrice,
@@ -379,12 +398,18 @@ const CreateEvent = () => {
 
         {
             step === 2 && ( <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn" ><div ><label className="block text-sm font-semibold text-gray-700 mb-1" >
-                Date & Time </label><div className="relative" ><input type="datetime-local"
+                Start Date & Time </label><div className="relative" ><input type="datetime-local"
                 name="datetime"
                 value={ formData.datetime }
                 onChange={ handleChange }
                 className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-2 focus:ring-[color:var(--secondary-color)]/20 outline-none transition-all"
-                required/><FiCalendar className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"/></div></div><div className="md:col-span-2 bg-gray-50 p-6 rounded-xl border border-gray-100" ><h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2" ><FiSettings/> Recurring Settings </h3><div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ><div ><label className="block text-xs font-medium text-gray-500 mb-1" >
+                required/><FiCalendar className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"/></div></div><div ><label className="block text-sm font-semibold text-gray-700 mb-1" >
+                End Date & Time <span className="text-xs text-gray-500">(Optional)</span></label><div className="relative" ><input type="datetime-local"
+                name="endDatetime"
+                value={ formData.endDatetime }
+                onChange={ handleChange }
+                min={ formData.datetime }
+                className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-2 focus:ring-[color:var(--secondary-color)]/20 outline-none transition-all"/><FiCalendar className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"/></div></div><div className="md:col-span-2 bg-gray-50 p-6 rounded-xl border border-gray-100" ><h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2" ><FiSettings/> Recurring Settings </h3><div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ><div ><label className="block text-xs font-medium text-gray-500 mb-1" >
                 Frequency </label><select name="repeatFrequency"
                 value={ formData.repeatFrequency }
                 onChange={ handleChange }

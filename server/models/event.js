@@ -18,6 +18,12 @@ const eventSchema = new mongoose.Schema(
         time: {
             type: String,
         },
+        endDate: {
+            type: String,
+        },
+        endTime: {
+            type: String,
+        },
         description: {
             type: String,
         },

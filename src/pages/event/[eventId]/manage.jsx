@@ -32,7 +32,7 @@ export default function ManageEventPage() {
     // Form State
     const [form, setForm] = useState({
         name: "", venue: "", address: "", lat: 0, lng: 0,
-        date: "", time: "", description: "", price: 0,
+        date: "", time: "", endDate: "", endTime: "", description: "", price: 0,
         profile: "", cover: "", organizer: "", capacity: 0,
         ticketTypes: [], registrationQuestions: [],
         visibility: "public",
@@ -65,6 +65,8 @@ export default function ManageEventPage() {
                 lng: typeof ev.lng === "number" ? ev.lng : 0,
                 date: ev.date || "",
                 time: ev.time || "",
+                endDate: ev.endDate || "",
+                endTime: ev.endTime || "",
                 description: ev.description || "",
                 price: ev.price || 0,
                 profile: ev.profile || "",
@@ -266,7 +268,16 @@ export default function ManageEventPage() {
                 setDeleteModal(false);
                 setTimeout(() => router.push("/users/dashboard"), 1500);
             } else {
-                setMessage({ type: "error", text: data.msg || "Failed to delete event" });
+                // Show specific error message if tickets were sold
+                if (data.ticketsSold) {
+                    setMessage({ 
+                        type: "error", 
+                        text: `Cannot delete event: ${data.ticketsSold} ticket(s) sold. Please cancel the event instead to process refunds.` 
+                    });
+                } else {
+                    setMessage({ type: "error", text: data.msg || "Failed to delete event" });
+                }
+                setDeleteModal(false);
             }
         } catch (err) {
             console.error(err);
@@ -398,8 +409,16 @@ export default function ManageEventPage() {
                                             <input type="text" name="date" value={form.date} onChange={handleChange} className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium" placeholder="DD/MM/YYYY" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Time</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Start Time</label>
                                             <input type="text" name="time" value={form.time} onChange={handleChange} className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">End Date <span className="text-xs text-gray-500">(Optional)</span></label>
+                                            <input type="text" name="endDate" value={form.endDate} onChange={handleChange} className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium" placeholder="DD/MM/YYYY" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">End Time <span className="text-xs text-gray-500">(Optional)</span></label>
+                                            <input type="text" name="endTime" value={form.endTime} onChange={handleChange} className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-[color:var(--secondary-color)] focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium" />
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Venue</label>
