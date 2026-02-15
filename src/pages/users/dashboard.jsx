@@ -181,12 +181,12 @@ function UserDashboard() {
                     >
                         <FiPlus className="text-base" /> Create Event
                     </button>
-                    <button 
+                    {/* <button 
                         onClick={() => window.open("https://www.google.com/maps/search/events+near+me", "_blank")}
                         className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:bg-gray-50 transition-colors"
                     >
                         <FiMapPin className="text-base" /> Map
-                    </button>
+                    </button> */}
                  </div>
               </div>
 

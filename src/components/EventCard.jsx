@@ -80,7 +80,19 @@ const EventCard = ({
                 {date && (
                     <div className="flex items-baseline gap-1 mb-1">
                         <span className="text-xs font-bold text-red-500 uppercase tracking-wider">
-                            {date.split('/')[1] && new Date(2024, parseInt(date.split('/')[1])-1).toLocaleString('default', { month: 'short' })} {date.split('/')[0]}
+                            {(() => {
+                                try {
+                                    const parts = date.split('/');
+                                    if (parts.length >= 2 && parts[1]) {
+                                        const monthIndex = parseInt(parts[1]) - 1;
+                                        const monthName = new Date(2024, monthIndex).toLocaleString('default', { month: 'short' });
+                                        return `${monthName} ${parts[0]}`;
+                                    }
+                                    return date;
+                                } catch {
+                                    return date;
+                                }
+                            })()}
                         </span>
                         <span className="text-[10px] font-medium text-gray-400">
                             {new Date().getFullYear()}
