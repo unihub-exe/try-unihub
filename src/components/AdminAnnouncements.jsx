@@ -116,9 +116,12 @@ export default function AdminAnnouncements() {
                             className="w-4 h-4 text-[color:var(--secondary-color)] rounded border-gray-300 focus:ring-[color:var(--secondary-color)]"
                         />
                         <label htmlFor="sendEmail" className="text-sm font-medium text-gray-700 select-none cursor-pointer">
-                            Send via Email to all users
+                            Also send via Email
                         </label>
                     </div>
+                    <p className="text-xs text-gray-500 mb-4">
+                        {sendEmail ? "Users will receive both in-app notification and email" : "Users will only receive in-app notification"}
+                    </p>
 
                     {status.msg && (
                             <div className={`p-3 rounded-lg text-sm font-medium ${status.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>

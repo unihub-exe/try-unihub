@@ -27,7 +27,8 @@ const verifyPaystackPayment = async(reference) => {
         const response = await paystack.transaction.verify({ reference });
         return response.data;
     } catch (error) {
-        console.error("Paystack verification error:", error);
+        console.error("Paystack verification error:", error.message || error);
+        // Return null instead of throwing to prevent crashes
         return null;
     }
 };
@@ -542,12 +543,55 @@ const verifyWalletFunding = async(req, res) => {
             const metadata = verification.metadata || {};
             const user_token = metadata.user_token;
             const amount = verification.amount / 100; // Convert from kobo
+            const purpose = metadata.purpose;
 
             if (!user_token) {
                 return res.status(400).send({ msg: "User token missing in transaction" });
             }
 
-            // Update user wallet with transaction record
+            // Handle Premium Upgrade
+            if (purpose === "premium_upgrade") {
+                const { event_id, days } = metadata;
+                
+                if (!event_id || !days) {
+                    return res.status(400).send({ msg: "Missing event details in transaction" });
+                }
+                
+                // Calculate expiry date
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + parseInt(days));
+                
+                // Update event to premium
+                await Event.updateOne(
+                    { event_id },
+                    { 
+                        $set: { 
+                            isPremium: true,
+                            premiumExpiresAt: expiryDate,
+                            premiumDays: parseInt(days)
+                        }
+                    }
+                );
+                
+                // Record transaction for organizer
+                await User.updateOne({ user_token }, {
+                    $push: {
+                        transactions: {
+                            type: "debit",
+                            amount: amount,
+                            description: `Premium Upgrade: ${days} days`,
+                            eventId: event_id,
+                            paymentReference: reference,
+                            date: new Date(),
+                            status: "completed"
+                        }
+                    }
+                });
+                
+                return res.send({ msg: "Event upgraded to premium successfully", eventId: event_id });
+            }
+
+            // Handle Wallet Funding (default)
             await User.updateOne({ user_token }, {
                 $inc: { "wallet.availableBalance": amount },
                 $push: {

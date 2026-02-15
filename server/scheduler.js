@@ -91,105 +91,129 @@ const sendSMS = async (phone, message) => {
 };
 
 const checkReminders = async () => {
-    console.log("Checking for event reminders...");
-    const events = await Event.find({});
-    const now = new Date();
+    try {
+        console.log("Checking for event reminders...");
+        const events = await Event.find({});
+        const now = new Date();
 
-    for (const event of events) {
-        const eventDate = parseDateTime(event.date, event.time);
-        if (!eventDate) continue;
+        for (const event of events) {
+            try {
+                const eventDate = parseDateTime(event.date, event.time);
+                if (!eventDate) continue;
 
-        const diffMs = eventDate - now;
-        const diffHours = diffMs / (1000 * 60 * 60);
+                const diffMs = eventDate - now;
+                const diffHours = diffMs / (1000 * 60 * 60);
 
-        // Define thresholds (in hours)
-        // 1 week = 168h
-        // 3 days = 72h
-        // 1 day = 24h
-        // 1 hour = 1h
+                // Define thresholds (in hours)
+                // 1 week = 168h
+                // 3 days = 72h
+                // 1 day = 24h
+                // 1 hour = 1h
 
-        // Helper to send batch notifications
-        const sendBatch = async (type) => {
-            console.log(`Sending ${type} reminders for event: ${event.name}`);
-            
-            // Get participants with user details
-            const participantIds = event.participants.map(p => p.id || p.userId).filter(Boolean);
-            
-            // We might need to fetch user details if not fully in participants array
-            // Assuming participants array has basic info, but let's fetch Users to be safe for Push/Phone
-            const users = await User.find({ 
-                $or: [
-                    { user_token: { $in: participantIds } },
-                    { _id: { $in: participantIds } } // Handle both ID types
-                ]
-            });
+                // Helper to send batch notifications
+                const sendBatch = async (type) => {
+                    try {
+                        console.log(`Sending ${type} reminders for event: ${event.name}`);
+                        
+                        // Get participants with user details
+                        const participantIds = event.participants.map(p => p.id || p.userId).filter(Boolean);
+                        
+                        // We might need to fetch user details if not fully in participants array
+                        // Assuming participants array has basic info, but let's fetch Users to be safe for Push/Phone
+                        const users = await User.find({ 
+                            $or: [
+                                { user_token: { $in: participantIds } },
+                                { _id: { $in: participantIds } } // Handle both ID types
+                            ]
+                        });
 
-            for (const user of users) {
-                const message = `Reminder: ${event.name} is starting in ${type}!`;
-                
-                // 1. Push Notification
-                await sendNotificationToUser(user._id, {
-                    title: "Event Reminder",
-                    body: message,
-                    url: `/event/${event.event_id}`
-                });
+                        for (const user of users) {
+                            try {
+                                const message = `Reminder: ${event.name} is starting in ${type}!`;
+                                
+                                // 1. Push Notification
+                                await sendNotificationToUser(user._id, {
+                                    title: "Event Reminder",
+                                    body: message,
+                                    url: `/event/${event.event_id}`
+                                });
 
-                // 2. Email
-                if (user.email) {
-                    await sendReminderEmail(user.email, `Reminder: ${event.name}`, `<p>Hello ${user.username},</p><p>${message}</p><p>Check details: <a href="${process.env.CLIENT_URL}/event/${event.event_id}">Here</a></p>`);
+                                // 2. Email
+                                if (user.email) {
+                                    await sendReminderEmail(user.email, `Reminder: ${event.name}`, `<p>Hello ${user.username},</p><p>${message}</p><p>Check details: <a href="${process.env.CLIENT_URL}/event/${event.event_id}">Here</a></p>`);
+                                }
+
+                                // 3. WhatsApp / SMS
+                                if (user.contactNumber) {
+                                    await sendWhatsAppReminder(user.contactNumber, message);
+                                    await sendSMS(user.contactNumber, message);
+                                }
+                            } catch (userError) {
+                                console.error(`Error sending reminder to user ${user._id}:`, userError.message);
+                            }
+                        }
+                    } catch (batchError) {
+                        console.error(`Error in sendBatch for ${type}:`, batchError.message);
+                    }
+                };
+
+                // 1 Week Reminder (approx 168 hours, allow window of 1 hour)
+                if (diffHours > 167 && diffHours < 169 && !event.remindersSent?.week) {
+                    await sendBatch("1 week");
+                    event.remindersSent = { ...event.remindersSent, week: true };
+                    await event.save();
                 }
 
-                // 3. WhatsApp / SMS
-                if (user.contactNumber) {
-                    await sendWhatsAppReminder(user.contactNumber, message);
-                    await sendSMS(user.contactNumber, message);
+                // 3 Days Reminder (approx 72 hours)
+                if (diffHours > 71 && diffHours < 73 && !event.remindersSent?.threeDays) {
+                    await sendBatch("3 days");
+                    event.remindersSent = { ...event.remindersSent, threeDays: true };
+                    await event.save();
                 }
+
+                // 1 Day Reminder (approx 24 hours)
+                if (diffHours > 23 && diffHours < 25 && !event.remindersSent?.day) {
+                    await sendBatch("1 day");
+                    event.remindersSent = { ...event.remindersSent, day: true };
+                    await event.save();
+                }
+
+                // 1 Hour Reminder
+                if (diffHours > 0.5 && diffHours < 1.5 && !event.remindersSent?.hour) {
+                    await sendBatch("1 hour");
+                    event.remindersSent = { ...event.remindersSent, hour: true };
+                    await event.save();
+                }
+
+                // Follow-up (24 hours AFTER event)
+                if (diffHours < -24 && diffHours > -26 && !event.remindersSent?.followUp) {
+                    try {
+                        console.log(`Sending follow-up for event: ${event.name}`);
+                        const participantIds = event.participants.map(p => p.id || p.userId).filter(Boolean);
+                        const users = await User.find({ user_token: { $in: participantIds } });
+                        
+                        for (const user of users) {
+                            try {
+                                // Email Survey
+                                if (user.email) {
+                                    await sendReminderEmail(user.email, `How was ${event.name}?`, `<p>Hello ${user.username},</p><p>Thank you for attending ${event.name}. We'd love your feedback!</p><p><a href="${process.env.CLIENT_URL}/event/${event.event_id}?feedback=true">Leave Feedback</a></p>`);
+                                }
+                            } catch (userError) {
+                                console.error(`Error sending follow-up to user ${user._id}:`, userError.message);
+                            }
+                        }
+                        event.remindersSent = { ...event.remindersSent, followUp: true };
+                        await event.save();
+                    } catch (followUpError) {
+                        console.error(`Error in follow-up for event ${event.event_id}:`, followUpError.message);
+                    }
+                }
+            } catch (eventError) {
+                console.error(`Error processing event ${event.event_id}:`, eventError.message);
             }
-        };
-
-        // 1 Week Reminder (approx 168 hours, allow window of 1 hour)
-        if (diffHours > 167 && diffHours < 169 && !event.remindersSent?.week) {
-            await sendBatch("1 week");
-            event.remindersSent = { ...event.remindersSent, week: true };
-            await event.save();
         }
-
-        // 3 Days Reminder (approx 72 hours)
-        if (diffHours > 71 && diffHours < 73 && !event.remindersSent?.threeDays) {
-            await sendBatch("3 days");
-            event.remindersSent = { ...event.remindersSent, threeDays: true };
-            await event.save();
-        }
-
-        // 1 Day Reminder (approx 24 hours)
-        if (diffHours > 23 && diffHours < 25 && !event.remindersSent?.day) {
-            await sendBatch("1 day");
-            event.remindersSent = { ...event.remindersSent, day: true };
-            await event.save();
-        }
-
-        // 1 Hour Reminder
-        if (diffHours > 0.5 && diffHours < 1.5 && !event.remindersSent?.hour) {
-            await sendBatch("1 hour");
-            event.remindersSent = { ...event.remindersSent, hour: true };
-            await event.save();
-        }
-
-        // Follow-up (24 hours AFTER event)
-        if (diffHours < -24 && diffHours > -26 && !event.remindersSent?.followUp) {
-             console.log(`Sending follow-up for event: ${event.name}`);
-             const participantIds = event.participants.map(p => p.id || p.userId).filter(Boolean);
-             const users = await User.find({ user_token: { $in: participantIds } });
-             
-             for (const user of users) {
-                // Email Survey
-                if (user.email) {
-                    await sendReminderEmail(user.email, `How was ${event.name}?`, `<p>Hello ${user.username},</p><p>Thank you for attending ${event.name}. We'd love your feedback!</p><p><a href="${process.env.CLIENT_URL}/event/${event.event_id}?feedback=true">Leave Feedback</a></p>`);
-                }
-             }
-             event.remindersSent = { ...event.remindersSent, followUp: true };
-             await event.save();
-        }
+    } catch (error) {
+        console.error("Error in checkReminders:", error.message);
     }
 };
 

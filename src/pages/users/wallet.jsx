@@ -514,46 +514,6 @@ export default function WalletPage() {
 
                                 {/* Actions Section */}
                                 <div className="space-y-6">
-                                    {/* Fund Wallet */}
-                                    <div className="bg-white rounded-3xl border border-gray-100 shadow-lg p-6 lg:p-8 h-fit sticky top-24">
-                                        <h3 className="text-xl font-black text-gray-900 mb-6">Fund Wallet</h3>
-                                        
-                                        <div className="space-y-6">
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Amount (₦)</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₦</span>
-                                                    <input
-                                                        type="number"
-                                                        value={amount}
-                                                        onChange={(e) => setAmount(e.target.value)}
-                                                        className="w-full pl-10 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent font-bold text-lg transition-all"
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                                <p className="text-xs text-gray-400 mt-2">Minimum: ₦100</p>
-                                            </div>
-
-                                            <button
-                                                onClick={fundWallet}
-                                                disabled={submitting}
-                                                className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-xl shadow-black/10 flex items-center justify-center gap-2"
-                                            >
-                                                {submitting ? (
-                                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <FiPlus className="text-xl" /> Add Funds
-                                                    </>
-                                                )}
-                                            </button>
-
-                                            <p className="text-xs text-gray-400 text-center font-medium px-4">
-                                                Secure payments processed by Paystack. Funds are available immediately.
-                                            </p>
-                                        </div>
-                                    </div>
-
                                     {/* Withdrawal for Organizers */}
                                     {isOrganizer && (
                                         <div className="bg-white rounded-3xl border border-gray-100 shadow-lg p-6 lg:p-8">

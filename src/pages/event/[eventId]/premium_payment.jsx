@@ -16,6 +16,7 @@ export default function PremiumPayment() {
     const [error, setError] = useState("");
     const [email, setEmail] = useState("");
     const [days, setDays] = useState(7);
+    const [maxDays, setMaxDays] = useState(30);
     const [pricePerDay, setPricePerDay] = useState(100);
     const [totalPrice, setTotalPrice] = useState(700);
 
@@ -65,6 +66,20 @@ export default function PremiumPayment() {
                 if (response.ok) {
                     const data = await response.json();
                     setEvent(data);
+                    
+                    // Calculate max days based on event date
+                    if (data.date) {
+                        const parts = data.date.split('/');
+                        if (parts.length === 3) {
+                            const eventDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const daysUntilEvent = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
+                            const calculatedMaxDays = Math.max(1, Math.min(daysUntilEvent, 30));
+                            setMaxDays(calculatedMaxDays);
+                            setDays(Math.min(days, calculatedMaxDays));
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching event:", error);
@@ -148,31 +163,8 @@ export default function PremiumPayment() {
             const data = await response.json();
 
             if (response.ok) {
-                // Calculate premium expiry date
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + days);
-
-                // Update event to premium
-                const updateResponse = await fetch(`${API_URL}/event/update`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        event_id: event_id,
-                        update: { 
-                            isPremium: true,
-                            premiumExpiresAt: expiryDate.toISOString(),
-                            premiumDays: days
-                        },
-                        user_token: user
-                    }),
-                });
-
-                if (updateResponse.ok) {
-                    alert("Payment Successful! Your event is now Premium.");
-                    router.push(`/event/${event_id}/manage`);
-                } else {
-                    setError("Payment verified but failed to upgrade event. Please contact support.");
-                }
+                alert("Payment Successful! Your event is now Premium.");
+                router.push(`/event/${event_id}/manage`);
             } else {
                 setError(data.msg || "Payment verification failed");
             }
@@ -262,10 +254,33 @@ export default function PremiumPayment() {
                                 <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 text-center relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
                                     
-                                    <p className="text-gray-500 font-bold uppercase tracking-wider text-xs mb-2">One-time payment</p>
-                                    <div className="text-6xl font-black text-gray-900 mb-8 tracking-tight">
-                                        ₦1,000<span className="text-2xl text-gray-400 font-bold">.00</span>
+                                    <p className="text-gray-500 font-bold uppercase tracking-wider text-xs mb-2">Premium Duration</p>
+                                    
+                                    {/* Days Selector */}
+                                    <div className="mb-6">
+                                        <label className="block text-sm font-bold text-gray-700 mb-3">Select Number of Days</label>
+                                        <input
+                                            type="range"
+                                            min="1"
+                                            max={maxDays}
+                                            value={days}
+                                            onChange={(e) => setDays(parseInt(e.target.value))}
+                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-2">
+                                            <span>1 day</span>
+                                            <span className="font-bold text-yellow-600 text-2xl">{days} {days === 1 ? 'day' : 'days'}</span>
+                                            <span>{maxDays} days</span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            Maximum {maxDays} days (until event date)
+                                        </p>
                                     </div>
+                                    
+                                    <div className="text-6xl font-black text-gray-900 mb-8 tracking-tight">
+                                        ₦{totalPrice.toLocaleString()}<span className="text-2xl text-gray-400 font-bold">.00</span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mb-6">₦{pricePerDay} per day × {days} {days === 1 ? 'day' : 'days'}</p>
                                     
                                     <div className="mb-8 p-4 bg-white rounded-2xl border border-gray-200 text-left shadow-sm flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">🎉</div>
