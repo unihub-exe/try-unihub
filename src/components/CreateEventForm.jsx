@@ -68,19 +68,38 @@ const CreateEvent = () => {
 
     const uploadImage = async(field, file) => {
         if (!file) return;
+        
+        // Validate file size (3MB)
+        const maxSize = 3 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert("File too large. Maximum size is 3MB");
+            return;
+        }
+        
         setUploading((prev) => ({...prev, [field]: true }));
-        const fd = new FormData();
-        fd.append("file", file);
+        
         try {
-            const res = await fetch(`${apiUrl}/upload/image`, {
-                method: "POST",
-                body: fd,
-            });
-            if (!res.ok) throw new Error(`${res.status}`);
-            const json = await res.json();
-            setFormData((f) => ({...f, [field]: json.url }));
+            // Upload directly to Cloudinary
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "unihub_preset");
+            formData.append("folder", "unihub");
+            
+            const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+            
+            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            
+            const data = await res.json();
+            setFormData((f) => ({...f, [field]: data.secure_url }));
         } catch (e) {
             console.error("Upload failed", e);
+            alert("Upload failed. Please try again.");
         } finally {
             setUploading((prev) => ({...prev, [field]: false }));
         }
