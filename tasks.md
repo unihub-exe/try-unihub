@@ -2,6 +2,38 @@ Excellent question! Let me provide a comprehensive breakdown of what's needed fo
 
 ## 📝 Recent Fixes (Latest)
 
+### ✅ Paystack Array Reference Crash - CRITICAL FIX (Today)
+**Issue Resolved:**
+- Server crashed when Paystack sent duplicate query parameters
+- Reference received as array `['xxx', 'xxx']` instead of string `'xxx'`
+- Caused 502 Bad Gateway and CORS errors
+
+**Root Cause:**
+- Paystack redirect URL had duplicate `reference` parameters
+- Express parsed it as an array
+- Paystack library couldn't handle array, crashed server
+
+**Fix Applied:**
+- Added array detection and conversion to string
+- Enhanced error handling in `verifyPaystackPayment()`
+- Added validation in `verifyWalletFunding()`
+- Comprehensive logging for debugging
+
+**Files Modified:**
+- `server/controllers/paymentController.js` - Array reference handling
+
+**Documentation:**
+- `PAYSTACK_ARRAY_REFERENCE_FIX.md` - Complete fix documentation
+
+**Impact:**
+- ✅ No more server crashes on payment verification
+- ✅ Handles duplicate query parameters gracefully
+- ✅ CORS errors resolved (were caused by crashes)
+- ✅ Better error messages and logging
+- ✅ Tickets issued successfully
+
+---
+
 ### ✅ Open Graph Meta Tags - Server-Side Rendering Fix (Today)
 **Issue Resolved:**
 - Social media platforms couldn't see meta tags because they were added client-side

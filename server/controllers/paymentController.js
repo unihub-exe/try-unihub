@@ -24,9 +24,20 @@ const generateReference = () => {
 // Verify Paystack transaction
 const verifyPaystackPayment = async(reference) => {
     try {
-        const response = await paystack.transaction.verify({ reference });
+        // Handle case where reference might be an array (from duplicate query params)
+        const refString = Array.isArray(reference) ? reference[0] : reference;
+        
+        if (!refString || typeof refString !== 'string') {
+            console.error("Invalid reference format:", reference);
+            return null;
+        }
+        
+        console.log("Verifying Paystack transaction with reference:", refString);
+        
+        const response = await paystack.transaction.verify({ reference: refString });
         // Check if response and data exist
         if (response && response.data) {
+            console.log("Paystack verification successful");
             return response.data;
         }
         console.error("Paystack verification: Invalid response structure", response);
@@ -561,7 +572,14 @@ const initializePaystackPayment = async(req, res) => {
 // Verify and complete wallet funding
 const verifyWalletFunding = async(req, res) => {
     try {
-        const { reference } = req.body;
+        let { reference } = req.body;
+        
+        // Handle case where reference might be an array (from duplicate query params)
+        if (Array.isArray(reference)) {
+            console.log("Reference received as array, using first element:", reference);
+            reference = reference[0];
+        }
+        
         if (!reference) {
             console.error("Verification failed: Missing reference");
             return res.status(400).send({ msg: "Missing reference" });
