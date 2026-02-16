@@ -1,7 +1,6 @@
 import { setAdminToken } from "@/utils/setAdminToken";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { FiArrowLeft } from "react-icons/fi";
 import Cookies from "universal-cookie";
 import Image from "next/image";
 import { API_URL } from "@/utils/config";
@@ -162,23 +161,12 @@ export default function AdminAuth({ adminIdCookie }) {
                                         />
                                     </div>
 
-                                    <div className="pt-2 space-y-3">
+                                    <div className="pt-2">
                                         <button
                                             type="submit"
                                             className="w-full py-3 bg-[color:var(--secondary-color)] hover:bg-[color:var(--darker-secondary-color)] text-white font-bold rounded-lg shadow-lg shadow-blue-900/10 transition-all hover:-translate-y-0.5"
                                         >
                                             Verify Credentials
-                                        </button>
-                                        
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setEmail("invite.testing@gmail.com");
-                                                setPassword("invite123");
-                                            }}
-                                            className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-all"
-                                        >
-                                            Use Test Credentials
                                         </button>
                                     </div>
 

@@ -6,7 +6,9 @@
     "scripts": {
         "start": "node index.js",
         "dev": "node index.js",
-        "build": "echo 'No build step required for Node.js server'"
+        "build": "echo 'No build step required for Node.js server'",
+        "init-admin": "node initAdmin.js",
+        "add-admin": "node addAdmin.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",

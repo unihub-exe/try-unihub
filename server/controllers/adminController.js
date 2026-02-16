@@ -3,7 +3,9 @@ const User = require("../models/user");
 const Announcement = require("../models/announcement");
 const { Event } = require("../models/event");
 const { sendAnnouncementEmail } = require("../utils/emailService");
+const { createNotification } = require("./notificationController");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv");
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -15,11 +17,14 @@ const setAdmin = async (req, res) => {
 
     const token = await jwt.sign(payload, secret);
 
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
     const new_admin = new Admin({
         admin_id: token,
         email: req.body.email,
         name: req.body.name,
-        pass: req.body.password,
+        pass: hashedPassword,
     });
 
     try {
@@ -27,6 +32,7 @@ const setAdmin = async (req, res) => {
         console.log("Saved::New Admin::credentials.");
     } catch (error) {
         console.log(error);
+        return res.status(500).send({ msg: "Error creating admin" });
     }
 
     res.status(200).send({ msg: "Credentials Added" });
@@ -40,7 +46,11 @@ const adminAuth = async (req, res) => {
         const docs = await Admin.find({ email: Email });
         if (docs.length === 0) {
             return res.status(400).send({ msg: "Admin access denied" });
-        } else if (Pass === docs[0].pass) {
+        }
+        
+        // Compare hashed password
+        const isMatch = await bcrypt.compare(Pass, docs[0].pass);
+        if (isMatch) {
             res.status(200).send({
                 msg: "Success",
                 admin_token: docs[0].admin_id,
@@ -147,11 +157,28 @@ const createAnnouncement = async (req, res) => {
 
         await newAnnouncement.save();
 
+        // Get all users for notifications
+        const users = await User.find({}, 'email user_token');
+
+        // Send email if requested
         if (sendEmail) {
-            const users = await User.find({}, 'email');
             const emails = users.map(u => u.email).filter(e => e);
             if (emails.length > 0) {
                 await sendAnnouncementEmail(emails, title, message);
+            }
+        }
+
+        // Create in-app notifications for all users
+        for (const user of users) {
+            if (user.user_token) {
+                await createNotification(
+                    user.user_token,
+                    'announcement',
+                    title,
+                    message,
+                    null,
+                    { announcementId: newAnnouncement._id }
+                );
             }
         }
 

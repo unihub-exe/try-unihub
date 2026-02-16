@@ -1,18 +1,20 @@
 const mongoose = require("mongoose");
-const { eventSchema } = require("./event");
+const bcrypt = require("bcryptjs");
 
 const adminSchema = new mongoose.Schema(
     {
         admin_id: {
             type: String,
-            requird: true,
+            required: true,
         },
         email: {
             type: String,
             unique: true,
+            required: true,
         },
         pass: {
             type: String,
+            required: true,
         },
         name: {
             type: String,
@@ -29,22 +31,5 @@ const adminSchema = new mongoose.Schema(
 );
 
 const Admin = mongoose.models.Admin || mongoose.model("Admin", adminSchema);
-
-const test_credential = new Admin({
-    admin_id: "hqwkufywealufyewf.weiugbfre654wegreg",
-    email: "invite.testing@gmail.com",
-    name: "test",
-    pass: "invite123",
-});
-
-Admin.findOne({ admin_id: "hqwkufywealufyewf.weiugbfre654wegreg" })
-  .then((doc) => {
-    if (!doc) {
-      test_credential.save()
-        .then(() => console.log("Saved::Admin::test credentials", test_credential))
-        .catch((err) => console.log(err));
-    }
-  })
-  .catch((err) => console.log(err));
 
 module.exports = Admin;
