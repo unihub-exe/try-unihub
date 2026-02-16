@@ -15,7 +15,12 @@ export default function AdminAnnouncements() {
 
     const fetchAnnouncements = async () => {
         try {
-            const response = await fetch(`${API_URL}/admin/announcements`);
+            const adminToken = getAdminToken();
+            const response = await fetch(`${API_URL}/admin/announcements`, {
+                headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                },
+            });
             if (response.ok) {
                 const data = await response.json();
                 setAnnouncements(data);
@@ -49,10 +54,14 @@ export default function AdminAnnouncements() {
         const adminId = getAdminToken();
 
         try {
+            const adminToken = getAdminToken();
             const response = await fetch(`${API_URL}/admin/announcements`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, message, admin_id: adminId, sendEmail }),
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${adminToken}`,
+                },
+                body: JSON.stringify({ title, message, admin_id: adminToken, sendEmail }),
             });
 
             if (response.ok) {

@@ -20,12 +20,18 @@ export default function NavBar() {
         try {
             const response = await fetch(`${API_URL}/admin/details`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${adminIdCookie}`
+                },
                 body: JSON.stringify({ admin_id: adminIdCookie }),
             });
             if (response.ok) {
                 const data = await response.json();
                 setAdminData(data);
+            } else if (response.status === 401) {
+                // Token invalid, redirect to login
+                router.push("/admin/auth");
             }
         } catch (error) {
             console.error("Fetch admin error:", error);

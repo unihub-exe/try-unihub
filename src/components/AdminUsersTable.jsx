@@ -3,6 +3,7 @@ import { FiSearch, FiUser, FiMail, FiCreditCard, FiPhone, FiTrash2 } from "react
 import { io } from "socket.io-client";
 import ConfirmModal from "./ConfirmModal";
 import { API_URL } from "@/utils/config";
+import { getAdminToken } from "@/utils/getAdminToken";
 
 export default function AdminUsersTable() {
     const [users, setUsers] = useState([]);
@@ -14,7 +15,12 @@ export default function AdminUsersTable() {
 
     const fetchUsers = async () => {
         try {
-            const response = await fetch(`${API_URL}/admin/users`);
+            const adminToken = getAdminToken();
+            const response = await fetch(`${API_URL}/admin/users`, {
+                headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                },
+            });
             if (response.ok) {
                 const data = await response.json();
                 setUsers(data);
@@ -56,8 +62,12 @@ export default function AdminUsersTable() {
         
         setDeleting(deleteModal.id);
         try {
+            const adminToken = getAdminToken();
             const response = await fetch(`${API_URL}/admin/users/${deleteModal.id}`, {
                 method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                },
             });
             
             if (response.ok) {

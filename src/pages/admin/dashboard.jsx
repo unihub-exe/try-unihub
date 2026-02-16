@@ -36,7 +36,12 @@ function AdminDashboard() {
 
   const fetchAllEvents = async () => {
     try {
-      const response = await fetch(`${API_URL}/admin/events`);
+      const adminToken = getAdminToken();
+      const response = await fetch(`${API_URL}/admin/events`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
       if (!response.ok)
         throw new Error(`${response.status} ${response.statusText}`);
       const data = await response.json();
@@ -87,8 +92,12 @@ function AdminDashboard() {
 
     setDeletingEvent(deleteModal.eventId);
     try {
+      const adminToken = getAdminToken();
       const response = await fetch(`${API_URL}/admin/events/${deleteModal.eventId}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
       });
 
       if (response.ok) {
