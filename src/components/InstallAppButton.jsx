@@ -1,26 +1,36 @@
 import { useEffect, useState } from "react";
-import { FiDownload, FiSmartphone, FiX } from "react-icons/fi";
+import { FiDownload, FiSmartphone, FiX, FiAlertCircle } from "react-icons/fi";
 
 export default function InstallAppButton({ variant = "button" }) {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isInstallable, setIsInstallable] = useState(false);
     const [isInstalled, setIsInstalled] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
+    const [debugInfo, setDebugInfo] = useState("");
 
     useEffect(() => {
         // Check if already installed
-        if (window.matchMedia('(display-mode: standalone)').matches) {
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
             setIsInstalled(true);
+            setDebugInfo("App is already installed");
             return;
         }
 
+        // Debug: Log when component mounts
+        console.log("InstallAppButton mounted, waiting for beforeinstallprompt...");
+        setDebugInfo("Waiting for install prompt...");
+
         // Listen for the beforeinstallprompt event
         const handleBeforeInstallPrompt = (e) => {
+            console.log("beforeinstallprompt event fired!", e);
+            
             // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
+            
             // Stash the event so it can be triggered later
             setDeferredPrompt(e);
             setIsInstallable(true);
+            setDebugInfo("Install prompt ready!");
             
             // Show banner after 3 seconds if user hasn't dismissed it
             const dismissed = localStorage.getItem('pwa_banner_dismissed');
@@ -31,14 +41,29 @@ export default function InstallAppButton({ variant = "button" }) {
 
         // Listen for successful installation
         const handleAppInstalled = () => {
+            console.log("App installed successfully!");
             setIsInstalled(true);
             setIsInstallable(false);
             setDeferredPrompt(null);
             setShowBanner(false);
+            setDebugInfo("App installed!");
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         window.addEventListener('appinstalled', handleAppInstalled);
+
+        // Check if service worker is registered
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(registration => {
+                if (registration) {
+                    console.log("Service Worker is registered");
+                    setDebugInfo("Service Worker active, waiting for prompt...");
+                } else {
+                    console.log("No Service Worker registered");
+                    setDebugInfo("No Service Worker found");
+                }
+            });
+        }
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -47,33 +72,64 @@ export default function InstallAppButton({ variant = "button" }) {
     }, [variant]);
 
     const handleInstallClick = async () => {
+        console.log("Install button clicked, deferredPrompt:", deferredPrompt);
+        
         if (!deferredPrompt) {
             // Show instructions if install prompt not available
-            alert(
-                "To install UniHub:\n\n" +
-                "Chrome/Edge (Desktop): Click the install icon in the address bar\n" +
-                "Chrome (Android): Tap menu (⋮) → 'Install app' or 'Add to Home screen'\n" +
-                "Safari (iOS): Tap Share → 'Add to Home Screen'\n" +
-                "Firefox: Tap menu → 'Install'"
-            );
+            const isAndroid = /android/i.test(navigator.userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            
+            let instructions = "To install UniHub:\n\n";
+            
+            if (isAndroid) {
+                instructions += "Chrome (Android):\n" +
+                    "1. Tap the menu (⋮) in the top right\n" +
+                    "2. Select 'Install app' or 'Add to Home screen'\n\n" +
+                    "Note: Make sure you're using HTTPS and have visited the site before.";
+            } else if (isIOS) {
+                instructions += "Safari (iOS):\n" +
+                    "1. Tap the Share button\n" +
+                    "2. Scroll down and tap 'Add to Home Screen'\n" +
+                    "3. Tap 'Add' in the top right";
+            } else {
+                instructions += "Chrome/Edge (Desktop):\n" +
+                    "• Click the install icon in the address bar\n\n" +
+                    "Chrome (Android):\n" +
+                    "• Tap menu (⋮) → 'Install app'\n\n" +
+                    "Safari (iOS):\n" +
+                    "• Tap Share → 'Add to Home Screen'\n\n" +
+                    "Firefox:\n" +
+                    "• Tap menu → 'Install'";
+            }
+            
+            alert(instructions);
             return;
         }
 
-        // Show the install prompt
-        deferredPrompt.prompt();
+        try {
+            // Show the install prompt
+            console.log("Showing install prompt...");
+            await deferredPrompt.prompt();
 
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPrompt.userChoice;
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to install prompt: ${outcome}`);
 
-        if (outcome === 'accepted') {
-            console.log('User accepted the install prompt');
-        } else {
-            console.log('User dismissed the install prompt');
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                setDebugInfo("Installation accepted!");
+            } else {
+                console.log('User dismissed the install prompt');
+                setDebugInfo("Installation dismissed");
+            }
+
+            // Clear the deferredPrompt
+            setDeferredPrompt(null);
+            setShowBanner(false);
+        } catch (error) {
+            console.error("Error during installation:", error);
+            setDebugInfo(`Error: ${error.message}`);
         }
-
-        // Clear the deferredPrompt
-        setDeferredPrompt(null);
-        setShowBanner(false);
     };
 
     const dismissBanner = () => {
@@ -140,22 +196,83 @@ export default function InstallAppButton({ variant = "button" }) {
 
     // Button variant (for settings/profile page)
     if (variant === "button") {
+        // Always show the button, even if not installable yet
+        const buttonDisabled = !deferredPrompt && !isInstalled;
+        
         return (
-            <button
-                onClick={handleInstallClick}
-                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-[color:var(--secondary-color)] to-blue-600 text-white rounded-xl hover:shadow-lg transition-all group"
-            >
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                        <FiSmartphone className="text-xl" />
+            <div className="space-y-2">
+                <button
+                    onClick={handleInstallClick}
+                    disabled={buttonDisabled && false} // Never actually disable, just show state
+                    className={`w-full flex items-center justify-between p-4 rounded-xl transition-all group ${
+                        isInstalled 
+                            ? 'bg-green-50 border-2 border-green-200' 
+                            : deferredPrompt
+                            ? 'bg-gradient-to-r from-[color:var(--secondary-color)] to-blue-600 text-white hover:shadow-lg'
+                            : 'bg-gray-100 border-2 border-gray-200 hover:bg-gray-200'
+                    }`}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            isInstalled 
+                                ? 'bg-green-100' 
+                                : deferredPrompt
+                                ? 'bg-white/20'
+                                : 'bg-gray-200'
+                        }`}>
+                            {isInstalled ? (
+                                <FiSmartphone className="text-xl text-green-600" />
+                            ) : deferredPrompt ? (
+                                <FiSmartphone className="text-xl text-white" />
+                            ) : (
+                                <FiAlertCircle className="text-xl text-gray-500" />
+                            )}
+                        </div>
+                        <div className="text-left">
+                            <div className={`font-bold ${
+                                isInstalled 
+                                    ? 'text-green-900' 
+                                    : deferredPrompt
+                                    ? 'text-white'
+                                    : 'text-gray-700'
+                            }`}>
+                                {isInstalled 
+                                    ? 'App Already Installed' 
+                                    : deferredPrompt
+                                    ? 'Install UniHub App'
+                                    : 'Install UniHub App'}
+                            </div>
+                            <div className={`text-xs ${
+                                isInstalled 
+                                    ? 'text-green-700' 
+                                    : deferredPrompt
+                                    ? 'text-white/80'
+                                    : 'text-gray-500'
+                            }`}>
+                                {isInstalled 
+                                    ? 'UniHub is installed on your device' 
+                                    : deferredPrompt
+                                    ? 'Quick access from your home screen'
+                                    : 'Tap for installation instructions'}
+                            </div>
+                        </div>
                     </div>
-                    <div className="text-left">
-                        <div className="font-bold">Install UniHub App</div>
-                        <div className="text-xs text-white/80">Quick access from your home screen</div>
+                    {isInstalled ? (
+                        <div className="text-2xl">✓</div>
+                    ) : (
+                        <FiDownload className={`text-xl transition-transform ${
+                            deferredPrompt ? 'text-white group-hover:translate-y-0.5' : 'text-gray-500'
+                        }`} />
+                    )}
+                </button>
+                
+                {/* Debug info - remove this in production */}
+                {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                        Debug: {debugInfo}
                     </div>
-                </div>
-                <FiDownload className="text-xl group-hover:translate-y-0.5 transition-transform" />
-            </button>
+                )}
+            </div>
         );
     }
 
