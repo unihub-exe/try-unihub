@@ -25,11 +25,11 @@ import {
 import { LuWallet } from "react-icons/lu";
 import { API_URL } from "@/utils/config";
 
-function EventPage() {
+function EventPage({ initialEventData, fullUrl }) {
   const router = useRouter();
   const eventId = router.query.eventId;
   const userId = getUserToken();
-  const [eventData, setEventData] = useState(null);
+  const [eventData, setEventData] = useState(initialEventData);
   const [isUserRegistered, setIsUserRegistered] = useState(false);
   const [isWaitlisted, setIsWaitlisted] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -60,6 +60,23 @@ function EventPage() {
       alert("Link copied to clipboard!");
     }
   };
+
+  useEffect(() => {
+    // Update registration status when userId is available
+    if (userId && eventData) {
+      setIsUserRegistered(
+        eventData.participants &&
+          eventData.participants.some((participant) => participant.id === userId)
+      );
+      setIsWaitlisted(
+        eventData.waitlist && eventData.waitlist.some((p) => p.userId === userId)
+      );
+      setIsPending(
+        eventData.pendingParticipants &&
+          eventData.pendingParticipants.some((p) => p.userId === userId)
+      );
+    }
+  }, [userId, eventData]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -155,24 +172,31 @@ function EventPage() {
       </div>
     );
 
-  const eventUrl = typeof window !== 'undefined' ? window.location.href : '';
+  // Use fullUrl from server-side props, fallback to window.location for client-side
+  const eventUrl = fullUrl || (typeof window !== 'undefined' ? window.location.href : '');
   const eventPrice = Number(eventData.price) === 0 ? 'Free' : `₦${eventData.price}`;
+  
+  // Prepare meta tag content
+  const metaTitle = eventData.name || 'Event';
+  const metaDescription = eventData.description?.substring(0, 200) || `Join ${eventData.name} on ${eventData.date} at ${eventData.venue}`;
+  const metaImage = eventData.profile || eventData.cover || '';
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-slate-900 pb-20">
       <Head>
-        <title>{eventData.name} | UniHub</title>
-        <meta name="description" content={eventData.description?.substring(0, 160) || `Join ${eventData.name} on ${eventData.date} at ${eventData.venue}`} />
+        <title>{metaTitle} | UniHub</title>
+        <meta name="description" content={metaDescription.substring(0, 160)} />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="event" />
         <meta property="og:url" content={eventUrl} />
-        <meta property="og:title" content={eventData.name} />
-        <meta property="og:description" content={eventData.description?.substring(0, 200) || `Join us for ${eventData.name}. ${eventData.date} at ${eventData.time}. ${eventData.venue}.`} />
-        <meta property="og:image" content={eventData.profile || eventData.cover} />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:image" content={metaImage} />
+        <meta property="og:image:secure_url" content={metaImage} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={eventData.name} />
+        <meta property="og:image:alt" content={metaTitle} />
         <meta property="og:site_name" content="UniHub" />
         
         {/* Event specific OG tags */}
@@ -182,10 +206,10 @@ function EventPage() {
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={eventUrl} />
-        <meta name="twitter:title" content={eventData.name} />
-        <meta name="twitter:description" content={eventData.description?.substring(0, 200) || `Join us for ${eventData.name}. ${eventData.date} at ${eventData.time}.`} />
-        <meta name="twitter:image" content={eventData.profile || eventData.cover} />
-        <meta name="twitter:image:alt" content={eventData.name} />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={metaImage} />
+        <meta name="twitter:image:alt" content={metaTitle} />
         
         {/* WhatsApp specific (uses OG tags) */}
         <meta property="og:locale" content="en_US" />
@@ -587,6 +611,51 @@ function EventPage() {
       )}
     </div>
   );
+}
+
+// Server-side rendering for SEO and social media meta tags
+export async function getServerSideProps(context) {
+  const { eventId } = context.params;
+  const { req } = context;
+  
+  try {
+    // Get the full URL for canonical and og:url
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const fullUrl = `${protocol}://${host}${req.url}`;
+    
+    // Fetch event data on the server
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:5001';
+    const response = await fetch(`${apiUrl}/event/getevent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event_id: eventId,
+      }),
+    });
+
+    if (!response.ok) {
+      return {
+        notFound: true,
+      };
+    }
+
+    const eventData = await response.json();
+
+    return {
+      props: {
+        initialEventData: eventData,
+        fullUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching event data for SSR:", error);
+    return {
+      notFound: true,
+    };
+  }
 }
 
 export default EventPage;
