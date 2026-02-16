@@ -20,15 +20,17 @@ const { authenticate, requireRole } = require("../middleware/auth");
 
 router.route("/setadmin").post(setAdmin);
 router.route("/auth").post(adminAuth);
-router.route("/details").post(adminDetails);
+router.route("/details").post(authenticate, requireRole("ADMIN"), adminDetails);
 // router.route("/mail/test").post(sendTestMailHandler); // TODO: Implement sendTestMailHandler
-router.route("/users").get(getAllUsers);
-router.route("/users/:id").delete(deleteUser);
-router.route("/events").get(getAllEvents);
-router.route("/events/:id").delete(deleteEvent);
-router.route("/announcements").get(getAnnouncements).post(createAnnouncement);
-router.route("/stats").get(getSystemStats);
-router.route("/testimonials").get(getTestimonials);
+router.route("/users").get(authenticate, requireRole("ADMIN"), getAllUsers);
+router.route("/users/:id").delete(authenticate, requireRole("ADMIN"), deleteUser);
+router.route("/events").get(authenticate, requireRole("ADMIN"), getAllEvents);
+router.route("/events/:id").delete(authenticate, requireRole("ADMIN"), deleteEvent);
+router.route("/announcements")
+    .get(authenticate, requireRole("ADMIN"), getAnnouncements)
+    .post(authenticate, requireRole("ADMIN"), createAnnouncement);
+router.route("/stats").get(authenticate, requireRole("ADMIN"), getSystemStats);
+router.route("/testimonials").get(authenticate, requireRole("ADMIN"), getTestimonials);
 
 // Settings routes
 router.route("/settings")

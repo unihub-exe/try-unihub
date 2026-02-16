@@ -5,7 +5,7 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Stronger token validation
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
     const header = req.headers.authorization || "";
     const tokenFromHeader = header.startsWith("Bearer ") ?
         header.slice(7) :
@@ -44,9 +44,26 @@ function authenticate(req, res, next) {
         req.user = payload;
         req.user.user_token = token;
 
-        // Set role based on token type
+        // Set role based on token type or check if it's an admin token
         if (adminId && token === adminId) {
             req.user.role = "ADMIN";
+        } else if (tokenFromHeader) {
+            // Check if this is an admin token by verifying against Admin collection
+            const Admin = require("../models/admin");
+            const admin = await Admin.findOne({ admin_id: token });
+            
+            if (admin) {
+                req.user.role = "ADMIN";
+                req.user.email = admin.email;
+                req.user.name = admin.name;
+            } else if (payload.role) {
+                req.user.role = payload.role;
+            } else if (payload.email && !payload.user_id && !payload.username) {
+                // Fallback: if token has only email (admin pattern), treat as admin
+                req.user.role = "ADMIN";
+            } else if (userId && token === userId) {
+                req.user.role = "ORGANIZER";
+            }
         } else if (!req.user.role && userId && token === userId) {
             req.user.role = "ORGANIZER";
         }
