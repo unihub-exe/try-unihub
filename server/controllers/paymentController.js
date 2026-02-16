@@ -493,10 +493,10 @@ const cancelRegistration = async(req, res) => {
     }
 };
 
-// Initialize Paystack payment for wallet funding
+// Initialize Paystack payment for wallet funding or ticket purchase
 const initializePaystackPayment = async(req, res) => {
     try {
-        const { email, amount, user_token } = req.body;
+        const { email, amount, user_token, metadata } = req.body;
         const amt = Number(amount);
 
         if (!email || !amt || amt <= 0) {
@@ -505,16 +505,34 @@ const initializePaystackPayment = async(req, res) => {
 
         const reference = generateReference();
 
+        // Determine purpose and callback URL
+        let purpose = "wallet_funding";
+        let callbackUrl = `${process.env.CLIENT_URL || "http://localhost:3000"}/users/dashboard?status=success&reference=${reference}`;
+        
+        // Prepare metadata for Paystack
+        const paystackMetadata = {
+            user_token: user_token,
+            purpose: "wallet_funding"
+        };
+
+        // Check if this is a ticket purchase
+        if (metadata && metadata.event_id) {
+            purpose = "ticket_purchase";
+            paystackMetadata.purpose = "ticket_purchase";
+            paystackMetadata.event_id = metadata.event_id;
+            paystackMetadata.ticketType = metadata.ticketType || "General Admission";
+            paystackMetadata.answers = metadata.answers || "{}";
+            paystackMetadata.product = metadata.product || "{}";
+            callbackUrl = `${process.env.CLIENT_URL || "http://localhost:3000"}/event/${metadata.event_id}/payment?reference=${reference}`;
+        }
+
         // Create Paystack checkout session
         const response = await paystack.transaction.initialize({
             email: email,
             amount: amt * 100, // Convert to kobo
             reference: reference,
-            metadata: {
-                user_token: user_token,
-                purpose: "wallet_funding"
-            },
-            callback_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/users/dashboard?status=success&reference=${reference}`
+            metadata: paystackMetadata,
+            callback_url: callbackUrl
         });
 
         if (response.status) {
@@ -598,6 +616,7 @@ const verifyWalletFunding = async(req, res) => {
 
             // Handle Ticket Purchase
             if (metadata.event_id && metadata.product) {
+                console.log("Processing ticket purchase for event:", metadata.event_id);
                 const event_id = metadata.event_id;
                 const ticketType = metadata.ticketType || "General Admission";
                 const answers = metadata.answers ? JSON.parse(metadata.answers) : {};
@@ -606,18 +625,21 @@ const verifyWalletFunding = async(req, res) => {
                 // Get user details
                 const user = await User.findOne({ user_token });
                 if (!user) {
+                    console.error("User not found:", user_token);
                     return res.status(404).send({ msg: "User not found" });
                 }
                 
                 // Get event details
                 const event = await Event.findOne({ event_id });
                 if (!event) {
+                    console.error("Event not found:", event_id);
                     return res.status(404).send({ msg: "Event not found" });
                 }
                 
                 // Check if already registered
                 const alreadyRegistered = event.participants && event.participants.some(p => p.id === user_token);
                 if (alreadyRegistered) {
+                    console.log("User already registered:", user_token, event_id);
                     return res.send({ status: "alreadyregistered", msg: "You are already registered for this event" });
                 }
                 
@@ -631,6 +653,7 @@ const verifyWalletFunding = async(req, res) => {
                     passID: key,
                 }, process.env.JWT_SECRET);
                 
+                console.log("Adding participant to event:", event_id);
                 // Add participant to event
                 await Event.updateOne(
                     { event_id },
@@ -658,40 +681,51 @@ const verifyWalletFunding = async(req, res) => {
                 }
                 
                 // Update ticket type sold count
-                if (ticketType) {
+                if (ticketType && event.ticketTypes && event.ticketTypes.length > 0) {
                     await Event.updateOne(
                         { event_id, "ticketTypes.name": ticketType },
                         { $inc: { "ticketTypes.$.sold": 1 } }
                     );
                 }
                 
+                console.log("Adding event to user's registered events");
                 // Add event to user's registered events
                 const updatedEvent = await Event.findOne({ event_id });
                 if (updatedEvent) {
+                    // Remove event if it already exists to avoid duplicates
+                    await User.updateOne(
+                        { user_token },
+                        { $pull: { registeredEvents: { event_id: event_id } } }
+                    );
+                    // Add the updated event
                     await User.updateOne(
                         { user_token },
                         { $push: { registeredEvents: updatedEvent } }
                     );
+                    console.log("Event added to user's library");
                 }
                 
+                console.log("Recording transaction");
                 // Record transaction
                 await User.updateOne({ user_token }, {
                     $push: {
                         transactions: {
                             type: "debit",
                             amount: amount,
-                            description: event.name,
+                            description: `Ticket: ${event.name}`,
                             eventId: event_id,
+                            transactionId: reference,
                             paymentReference: reference,
                             date: new Date(),
                             status: "completed"
                         }
                     }
                 });
+                console.log("Transaction recorded");
                 
                 // Send ticket email
                 try {
-                    const { sendTicketEmail } = require("../utils/emailService");
+                    console.log("Sending ticket email to:", user.email);
                     await sendTicketEmail({
                         email: user.email,
                         name: user.username || user.displayName,
@@ -705,6 +739,7 @@ const verifyWalletFunding = async(req, res) => {
                         eventId: event_id,
                         userId: user_token
                     });
+                    console.log("Ticket email sent successfully");
                 } catch (emailError) {
                     console.error("Error sending ticket email:", emailError);
                     // Don't fail the transaction if email fails
@@ -712,10 +747,19 @@ const verifyWalletFunding = async(req, res) => {
                 
                 // Add to organizer's wallet (locked balance)
                 if (event.organizer) {
-                    const { addTicketSale } = require("./walletController");
-                    await addTicketSale(event.organizer, amount, event_id, event.name);
+                    try {
+                        const walletController = require("./walletController");
+                        if (walletController.addTicketSale) {
+                            await walletController.addTicketSale(event.organizer, amount, event_id, event.name);
+                            console.log("Added to organizer wallet");
+                        }
+                    } catch (walletError) {
+                        console.error("Error adding to organizer wallet:", walletError);
+                        // Don't fail the transaction if wallet update fails
+                    }
                 }
                 
+                console.log("Ticket purchase completed successfully");
                 return res.send({ 
                     status: "success",
                     msg: "Ticket purchased successfully",

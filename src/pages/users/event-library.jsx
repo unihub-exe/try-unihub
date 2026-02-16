@@ -49,34 +49,22 @@ export default function EventLibrary() {
 
     const fetchTicketsForEvents = async (eventsList) => {
       try {
-        // Fetch user details to get registered events with ticket info
-        const userRes = await fetch(`${API_URL}/user/details`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_token: userId }),
-        });
+        // For each event, find the user's participant entry
+        const ticketsWithEvents = [];
         
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          const registeredEvents = userData.registeredEvents || [];
-          
-          // Match tickets with events
-          const ticketsWithEvents = [];
-          eventsList.forEach(event => {
-            const registration = registeredEvents.find(reg => reg.event_id === event.event_id);
-            if (registration && registration.participants) {
-              registration.participants.forEach(participant => {
-                ticketsWithEvents.push({
-                  ...participant,
-                  event: event,
-                  eventId: event.event_id
-                });
-              });
-            }
-          });
-          
-          setTickets(ticketsWithEvents);
+        for (const event of eventsList) {
+          // Find user's participant entry in this event
+          const participant = event.participants?.find(p => p.id === userId);
+          if (participant) {
+            ticketsWithEvents.push({
+              ...participant,
+              event: event,
+              eventId: event.event_id
+            });
+          }
         }
+        
+        setTickets(ticketsWithEvents);
       } catch (error) {
         console.error("Failed to fetch tickets", error);
       }
