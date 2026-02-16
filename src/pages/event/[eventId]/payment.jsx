@@ -239,31 +239,25 @@ export default function Payment() {
 
     const verifyPaystackPayment = async (reference) => {
         const user_id = getUserToken();
-        const queryType = router.query.type ? decodeURIComponent(router.query.type) : "";
         
         try {
-            const response = await fetch(`${API_URL}/payment`, {
+            const response = await fetch(`${API_URL}/wallet/verify`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    provider: "paystack",
-                    paystackReference: reference,
-                    product,
-                    user: { user_id },
-                    event: { event_id },
-                    ticketType: queryType,
-                    answers
-                }),
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${user_id}`
+                },
+                body: JSON.stringify({ reference }),
             });
             
             const data = await response.json();
             if (data.status === "success") {
                 shootConfetti();
                 showMessage("success", "Payment Successful. Your ticket has been issued.");
-                setTimeout(() => router.push("/users/dashboard"), 1500);
+                setTimeout(() => router.push("/users/event-library"), 1500);
             } else if (data.status === "alreadyregistered") {
-                showMessage("error", "User is already registered.");
-                setTimeout(() => router.push("/users/dashboard"), 1500);
+                showMessage("error", "You are already registered for this event.");
+                setTimeout(() => router.push("/users/event-library"), 1500);
             } else {
                 showMessage("error", data.msg || "Payment verification failed.");
             }

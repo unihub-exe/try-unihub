@@ -418,22 +418,36 @@ export default function WalletPage() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {transactions.map((t, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-                                                {getTransactionIcon(t.type)}
+                                {transactions.map((t, i) => {
+                                    // Clean up description - remove "Free Registration:" prefix and show just event name
+                                    let displayDescription = t.description;
+                                    if (displayDescription.startsWith('Free Registration: ')) {
+                                        displayDescription = displayDescription.replace('Free Registration: ', '');
+                                    }
+                                    if (displayDescription.startsWith('Ticket purchase - ')) {
+                                        displayDescription = displayDescription.replace('Ticket purchase - ', '');
+                                    }
+                                    if (displayDescription.startsWith('Ticket sale - ')) {
+                                        displayDescription = displayDescription.replace('Ticket sale - ', '');
+                                    }
+                                    
+                                    return (
+                                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                                                    {getTransactionIcon(t.type)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-gray-900">{displayDescription}</div>
+                                                    <div className="text-sm text-gray-500">{formatDate(t.createdAt)}</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="font-bold text-gray-900">{t.description}</div>
-                                                <div className="text-sm text-gray-500">{formatDate(t.createdAt)}</div>
+                                            <div className={`text-lg font-bold ${t.amount > 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                                                {t.amount > 0 ? '+' : ''}₦{Math.abs(t.amount).toLocaleString()}
                                             </div>
                                         </div>
-                                        <div className={`text-lg font-bold ${t.amount > 0 ? 'text-green-600' : 'text-gray-900'}`}>
-                                            {t.amount > 0 ? '+' : ''}₦{Math.abs(t.amount).toLocaleString()}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

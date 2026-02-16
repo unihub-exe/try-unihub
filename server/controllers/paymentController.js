@@ -596,6 +596,133 @@ const verifyWalletFunding = async(req, res) => {
                 });
             }
 
+            // Handle Ticket Purchase
+            if (metadata.event_id && metadata.product) {
+                const event_id = metadata.event_id;
+                const ticketType = metadata.ticketType || "General Admission";
+                const answers = metadata.answers ? JSON.parse(metadata.answers) : {};
+                const product = metadata.product ? JSON.parse(metadata.product) : {};
+                
+                // Get user details
+                const user = await User.findOne({ user_token });
+                if (!user) {
+                    return res.status(404).send({ msg: "User not found" });
+                }
+                
+                // Get event details
+                const event = await Event.findOne({ event_id });
+                if (!event) {
+                    return res.status(404).send({ msg: "Event not found" });
+                }
+                
+                // Check if already registered
+                const alreadyRegistered = event.participants && event.participants.some(p => p.id === user_token);
+                if (alreadyRegistered) {
+                    return res.send({ status: "alreadyregistered", msg: "You are already registered for this event" });
+                }
+                
+                // Generate ticket pass ID
+                const key = require("uuid").v4();
+                
+                // Create QR token
+                const qrToken = jwt.sign({
+                    event_id: event_id,
+                    user_id: user_token,
+                    passID: key,
+                }, process.env.JWT_SECRET);
+                
+                // Add participant to event
+                await Event.updateOne(
+                    { event_id },
+                    {
+                        $push: {
+                            participants: {
+                                id: user_token,
+                                name: user.username,
+                                email: user.email,
+                                passID: key,
+                                regno: user.reg_number,
+                                entry: false,
+                                qrToken: qrToken,
+                                ticketType: ticketType,
+                                answers: answers,
+                                amount_paid: amount
+                            }
+                        }
+                    }
+                );
+                
+                // Emit socket event
+                if (global.io) {
+                    global.io.emit("participant_updated", { eventId: event_id });
+                }
+                
+                // Update ticket type sold count
+                if (ticketType) {
+                    await Event.updateOne(
+                        { event_id, "ticketTypes.name": ticketType },
+                        { $inc: { "ticketTypes.$.sold": 1 } }
+                    );
+                }
+                
+                // Add event to user's registered events
+                const updatedEvent = await Event.findOne({ event_id });
+                if (updatedEvent) {
+                    await User.updateOne(
+                        { user_token },
+                        { $push: { registeredEvents: updatedEvent } }
+                    );
+                }
+                
+                // Record transaction
+                await User.updateOne({ user_token }, {
+                    $push: {
+                        transactions: {
+                            type: "debit",
+                            amount: amount,
+                            description: event.name,
+                            eventId: event_id,
+                            paymentReference: reference,
+                            date: new Date(),
+                            status: "completed"
+                        }
+                    }
+                });
+                
+                // Send ticket email
+                try {
+                    const { sendTicketEmail } = require("../utils/emailService");
+                    await sendTicketEmail({
+                        email: user.email,
+                        name: user.username || user.displayName,
+                        eventName: event.name,
+                        eventDate: event.date,
+                        eventTime: event.time,
+                        eventVenue: event.venue,
+                        ticketType: ticketType,
+                        price: amount,
+                        ticketId: key,
+                        eventId: event_id,
+                        userId: user_token
+                    });
+                } catch (emailError) {
+                    console.error("Error sending ticket email:", emailError);
+                    // Don't fail the transaction if email fails
+                }
+                
+                // Add to organizer's wallet (locked balance)
+                if (event.organizer) {
+                    const { addTicketSale } = require("./walletController");
+                    await addTicketSale(event.organizer, amount, event_id, event.name);
+                }
+                
+                return res.send({ 
+                    status: "success",
+                    msg: "Ticket purchased successfully",
+                    eventId: event_id
+                });
+            }
+
             // Handle Wallet Funding (default)
             await User.updateOne({ user_token }, {
                 $inc: { "wallet.availableBalance": amount },
