@@ -159,8 +159,16 @@ export default function Dropdown({ userData }) {
 
             {/* Logout Confirmation Modal */}
             {showLogoutModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+                <div 
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                    onClick={(e) => {
+                        // Close modal if clicking the backdrop
+                        if (e.target === e.currentTarget) {
+                            setShowLogoutModal(false);
+                        }
+                    }}
+                >
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex flex-col items-center text-center">
                             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
                                 <FiLogOut className="text-3xl text-red-600" />
