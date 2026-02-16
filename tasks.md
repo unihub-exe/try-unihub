@@ -2,6 +2,37 @@ Excellent question! Let me provide a comprehensive breakdown of what's needed fo
 
 ## 📝 Recent Fixes (Latest)
 
+### ✅ Critical Server Crashes Fixed - URGENT (Today)
+**Issues Resolved:**
+1. ✅ Server crash on Paystack payment verification (TypeError: Cannot read properties of undefined)
+2. ✅ Email transporter error causing ticket sending failures
+3. ✅ Missing assistant avatar after server restart
+
+**Root Causes:**
+- Paystack library receiving undefined response body
+- Wrong email transporter function being called
+- Local file not persisted in deployment
+
+**Fixes Applied:**
+- Enhanced Paystack verification with null checks and error handling
+- Fixed `sendTicketPdf()` to use correct `getTransporter()` function
+- Replaced local avatar with Cloudinary URL
+
+**Files Modified:**
+- `server/controllers/paymentController.js` - Better error handling
+- `server/controllers/smsController.js` - Fixed email transporter
+- `src/components/OnboardingGuide.jsx` - Cloudinary avatar URL
+
+**Documentation:**
+- `CRITICAL_FIXES_PAYSTACK_EMAIL.md` - Complete fix documentation
+
+**Impact:**
+- ✅ No more server crashes on payment verification
+- ✅ Tickets sent successfully via email
+- ✅ Avatar loads correctly after deployment
+
+---
+
 ### ✅ Social Sharing & Open Graph Meta Tags - FIXED (Today)
 **Issue Resolved:**
 - Event links now show event-specific information when shared on WhatsApp, Facebook, Twitter, LinkedIn, etc.

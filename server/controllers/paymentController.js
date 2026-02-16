@@ -25,9 +25,18 @@ const generateReference = () => {
 const verifyPaystackPayment = async(reference) => {
     try {
         const response = await paystack.transaction.verify({ reference });
-        return response.data;
+        // Check if response and data exist
+        if (response && response.data) {
+            return response.data;
+        }
+        console.error("Paystack verification: Invalid response structure", response);
+        return null;
     } catch (error) {
         console.error("Paystack verification error:", error.message || error);
+        // Log more details for debugging
+        if (error.response) {
+            console.error("Paystack error response:", error.response);
+        }
         // Return null instead of throwing to prevent crashes
         return null;
     }
@@ -553,17 +562,32 @@ const initializePaystackPayment = async(req, res) => {
 const verifyWalletFunding = async(req, res) => {
     try {
         const { reference } = req.body;
-        if (!reference) return res.status(400).send({ msg: "Missing reference" });
+        if (!reference) {
+            console.error("Verification failed: Missing reference");
+            return res.status(400).send({ msg: "Missing reference" });
+        }
 
+        console.log("Verifying Paystack payment with reference:", reference);
         const verification = await verifyPaystackPayment(reference);
 
-        if (verification && verification.status === "success") {
+        if (!verification) {
+            console.error("Paystack verification returned null for reference:", reference);
+            return res.status(400).send({ 
+                msg: "Payment verification failed. Please contact support if payment was deducted.",
+                reference: reference
+            });
+        }
+
+        if (verification.status === "success") {
             const metadata = verification.metadata || {};
             const user_token = metadata.user_token;
             const amount = verification.amount / 100; // Convert from kobo
             const purpose = metadata.purpose;
 
+            console.log("Payment verified successfully:", { reference, amount, purpose, user_token });
+
             if (!user_token) {
+                console.error("User token missing in transaction metadata");
                 return res.status(400).send({ msg: "User token missing in transaction" });
             }
 
@@ -785,11 +809,19 @@ const verifyWalletFunding = async(req, res) => {
             const updated = await User.findOne({ user_token }).select("wallet");
             res.send({ msg: "Wallet funded successfully", wallet: updated.wallet });
         } else {
-            res.status(400).send({ msg: "Payment verification failed" });
+            console.error("Payment verification failed - status not success:", verification);
+            res.status(400).send({ 
+                msg: "Payment verification failed. Transaction status: " + (verification?.status || "unknown"),
+                reference: reference
+            });
         }
     } catch (error) {
         console.error("Wallet funding verification error:", error);
-        res.status(500).send({ msg: "Verification failed" });
+        console.error("Error stack:", error.stack);
+        res.status(500).send({ 
+            msg: "Verification failed due to server error. Please contact support.",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 

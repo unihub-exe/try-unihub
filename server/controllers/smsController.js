@@ -103,7 +103,7 @@ function sendTicket(Details) {
 }
 
 function sendTicketPdf(Details, pdfBuffer) {
-    const transporter = createTransporter();
+    const transporter = getTransporter();
     const baseUrl = process.env.CLIENT_BASE_URL || process.env.CLIENT_URL || "http://localhost:3000";
     const eventLink = Details.event_id ? `${baseUrl}/event/${Details.event_id}` : baseUrl;
     const mapsLink = buildMapsLink(Details);

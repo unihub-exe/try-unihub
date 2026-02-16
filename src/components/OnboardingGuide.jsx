@@ -7,7 +7,7 @@ import { API_URL } from "@/utils/config";
 export default function OnboardingGuide({ visible, onDismiss }) {
   const router = useRouter();
   const [open, setOpen] = useState(visible);
-  const [avatarUrl, setAvatarUrl] = useState("/img/assistant-avatar.png");
+  const [avatarUrl, setAvatarUrl] = useState("https://res.cloudinary.com/df3zptxqc/image/upload/v1771219687/assistant-avatar_jrvqkv.jpg");
 
   useEffect(() => {
     setOpen(visible);
