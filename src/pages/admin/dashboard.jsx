@@ -37,11 +37,19 @@ function AdminDashboard() {
   const fetchAllEvents = async () => {
     try {
       const adminToken = getAdminToken();
+      if (!adminToken) {
+        router.push('/admin/auth');
+        return;
+      }
       const response = await fetch(`${API_URL}/admin/events`, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
+      if (response.status === 401) {
+        router.push('/admin/auth');
+        return;
+      }
       if (!response.ok)
         throw new Error(`${response.status} ${response.statusText}`);
       const data = await response.json();
@@ -53,6 +61,11 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
+    const adminToken = getAdminToken();
+    if (!adminToken) {
+      router.push('/admin/auth');
+      return;
+    }
     fetchAllEvents();
   }, [adminIdCookie]);
 

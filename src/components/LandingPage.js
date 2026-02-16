@@ -56,21 +56,33 @@ function LandingPage() {
     if (!base) return; // skip in preview when API URL is not set
     try {
       const response = await fetch(`${base}/event/getallevents`);
-      const statsRes = await fetch(`${base}/admin/stats`);
 
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats({
-          events: data.events !== undefined ? data.events.toString() : "0",
-          users: data.users !== undefined ? data.users.toString() : "0",
-          tickets: data.tickets !== undefined ? data.tickets.toString() : "0",
-        });
+      // Try to fetch stats, but don't fail if unauthorized
+      try {
+        const statsRes = await fetch(`${base}/admin/stats`);
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          setStats({
+            events: data.events !== undefined ? data.events.toString() : "0",
+            users: data.users !== undefined ? data.users.toString() : "0",
+            tickets: data.tickets !== undefined ? data.tickets.toString() : "0",
+          });
+        }
+      } catch (statsError) {
+        // Silently handle stats fetch error
+        console.log("Stats not available");
       }
 
-      const testRes = await fetch(`${base}/admin/testimonials`);
-      if (testRes.ok) {
-        const data = await testRes.json();
-        setTestimonials(data);
+      // Try to fetch testimonials, but don't fail if unauthorized
+      try {
+        const testRes = await fetch(`${base}/admin/testimonials`);
+        if (testRes.ok) {
+          const data = await testRes.json();
+          setTestimonials(data);
+        }
+      } catch (testError) {
+        // Silently handle testimonials fetch error
+        console.log("Testimonials not available");
       }
 
       if (!response.ok) {

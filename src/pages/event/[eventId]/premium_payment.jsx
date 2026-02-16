@@ -122,8 +122,9 @@ export default function PremiumPayment() {
             const data = await response.json();
 
             if (data.authorizationUrl) {
-                // Store event_id in sessionStorage for after payment
+                // Store event_id and redirect path in sessionStorage
                 sessionStorage.setItem('premium_event_id', event_id);
+                sessionStorage.setItem('premium_redirect', 'dashboard');
                 // Redirect to Paystack
                 window.location.href = data.authorizationUrl;
             } else {
@@ -163,8 +164,11 @@ export default function PremiumPayment() {
             const data = await response.json();
 
             if (response.ok) {
+                // Clear the stored event_id
+                sessionStorage.removeItem('premium_event_id');
                 alert("Payment Successful! Your event is now Premium.");
-                router.push(`/event/${event_id}/manage`);
+                // Redirect to dashboard instead of manage page
+                router.push('/users/dashboard');
             } else {
                 setError(data.msg || "Payment verification failed");
             }

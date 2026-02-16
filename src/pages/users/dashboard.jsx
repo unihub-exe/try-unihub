@@ -25,6 +25,30 @@ function UserDashboard() {
   });
   const [showGuide, setShowGuide] = useState(false);
   const [userName, setUserName] = useState("Explorer");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Handle premium payment success
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    const reference = params.get("reference");
+    
+    if (status === "success" && reference) {
+      // Check if this is from premium payment
+      const premiumEventId = sessionStorage.getItem('premium_event_id');
+      if (premiumEventId) {
+        setSuccessMessage("🎉 Your event has been upgraded to Premium!");
+        sessionStorage.removeItem('premium_event_id');
+        sessionStorage.removeItem('premium_redirect');
+        
+        // Clear URL params
+        window.history.replaceState({}, '', '/users/dashboard');
+        
+        // Clear message after 5 seconds
+        setTimeout(() => setSuccessMessage(""), 5000);
+      }
+    }
+  }, []);
 
   // Fix: Handle 400 errors gracefully
   const fetchAllEvents = async () => {
@@ -157,6 +181,18 @@ function UserDashboard() {
     <div className="min-h-screen bg-gray-50 pb-32 md:pb-0 font-sans">
        <UserNavBar />
        <OnboardingGuide visible={showGuide} onDismiss={() => setShowGuide(false)} />
+       
+       {/* Success Message Toast */}
+       {successMessage && (
+         <div className="fixed top-20 right-6 z-50 animate-fadeIn">
+           <div className="px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 bg-green-50 text-green-700 border-2 border-green-200">
+             <span className="font-bold">{successMessage}</span>
+             <button onClick={() => setSuccessMessage("")} className="p-1 hover:bg-black/5 rounded-full">
+               ✕
+             </button>
+           </div>
+         </div>
+       )}
        
        <div className="flex m-auto relative z-10 pt-6 lg:pt-8">
         <div className="flex mx-auto container px-4 lg:px-6 max-w-8xl">

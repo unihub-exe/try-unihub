@@ -103,6 +103,20 @@ export default function WalletPage() {
             router.push("/users/signin");
             return;
         }
+        
+        // Check if redirected from premium payment
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get("status");
+        const reference = params.get("reference");
+        
+        // If coming from premium payment, redirect to dashboard
+        if (status === "success" && reference && sessionStorage.getItem('premium_redirect') === 'dashboard') {
+            sessionStorage.removeItem('premium_redirect');
+            sessionStorage.removeItem('premium_event_id');
+            router.push('/users/dashboard');
+            return;
+        }
+        
         loadWalletData();
     }, []);
 

@@ -514,7 +514,7 @@ const initializePaystackPayment = async(req, res) => {
                 user_token: user_token,
                 purpose: "wallet_funding"
             },
-            callback_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/users/wallet?status=success&reference=${reference}`
+            callback_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/users/dashboard?status=success&reference=${reference}`
         });
 
         if (response.status) {
@@ -588,7 +588,12 @@ const verifyWalletFunding = async(req, res) => {
                     }
                 });
                 
-                return res.send({ msg: "Event upgraded to premium successfully", eventId: event_id });
+                // Return with redirect instruction
+                return res.send({ 
+                    msg: "Event upgraded to premium successfully", 
+                    eventId: event_id,
+                    redirect: 'dashboard'
+                });
             }
 
             // Handle Wallet Funding (default)

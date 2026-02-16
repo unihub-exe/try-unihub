@@ -226,7 +226,6 @@ export default function Signin({ userIdCookie }) {
       });
 
       const data = await response.json();
-      console.log("Signin response:", data);
 
       if (response.ok) {
         // IMPORTANT: Use user.user_token (permanent DB token), NOT accessToken (temporary JWT)
@@ -234,7 +233,6 @@ export default function Signin({ userIdCookie }) {
         const token = data.user?.user_token;
         
         if (!token) {
-          console.error("No user_token in response:", data);
           setMessage({ 
             errorMsg: "Authentication error. Please try again.", 
             successMsg: "" 
@@ -243,17 +241,7 @@ export default function Signin({ userIdCookie }) {
           return;
         }
         
-        console.log("Setting user token (permanent DB token):", token);
         setUserToken(token);
-        
-        // Verify token was set
-        const cookies = new Cookies();
-        const savedToken = cookies.get("user_token");
-        console.log("Token saved in cookie:", savedToken);
-        
-        if (savedToken !== token) {
-          console.error("Token mismatch! Set:", token, "Got:", savedToken);
-        }
         
         setMessage({
           errorMsg: "",
