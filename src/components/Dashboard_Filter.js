@@ -119,7 +119,7 @@ function Dashboard_Filter({
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 block flex justify-between">
             <span>Price Range</span>
             <span className="text-[color:var(--secondary-color)]">
-              {filterOptions.price[1] >= 20000000
+              {filterOptions.price[1] >= 200000
                 ? "All Prices"
                 : `Up to ₦${filterOptions.price[1].toLocaleString()}`}
             </span>
@@ -128,8 +128,8 @@ function Dashboard_Filter({
             <Slider
               range
               min={0}
-              max={20000000}
-              step={10000}
+              max={200000}
+              step={1000}
               value={filterOptions.price}
               onChange={handlePriceChange}
               trackStyle={[

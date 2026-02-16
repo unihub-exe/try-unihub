@@ -354,17 +354,17 @@ export default function CommunityChat() {
     const reversedPosts = posts.slice().reverse();
 
     return (
-        <div className="h-screen flex flex-col font-sans bg-[#efeae2] overflow-hidden">
-            {/* ===== HEADER (WhatsApp-style) ===== */}
-            <div className="bg-[#202c33] px-2 md:px-4 py-2 flex items-center justify-between z-40 flex-shrink-0">
-                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+        <div className="h-screen flex flex-col font-sans bg-gradient-to-b from-[#f5f7fa] to-[#e8ecf1] overflow-hidden">
+            {/* ===== HEADER (Modern Design) ===== */}
+            <div className="bg-white px-3 md:px-5 py-3 flex items-center justify-between z-40 flex-shrink-0 shadow-sm border-b border-gray-100">
+                <div className="flex items-center gap-3 min-w-0">
                     <button 
                         onClick={() => router.push("/users/community")} 
-                        className="p-1.5 rounded-full text-[#aebac1] hover:text-white transition-colors flex-shrink-0"
+                        className="p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-all flex-shrink-0"
                     >
                         <FiArrowLeft className="text-xl" />
                     </button>
-                    <div className="h-10 w-10 rounded-full bg-[#2a3942] overflow-hidden flex-shrink-0">
+                    <div className="h-11 w-11 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 overflow-hidden flex-shrink-0 shadow-md">
                         {community.profileImage ? (
                             <img src={community.profileImage} className="h-full w-full object-cover" alt="" />
                         ) : (
@@ -372,18 +372,18 @@ export default function CommunityChat() {
                         )}
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <h1 className="text-[#e9edef] text-base font-medium leading-tight truncate">{community.name}</h1>
-                        <span className="text-[#8696a0] text-xs truncate">
+                        <h1 className="text-gray-900 text-base font-semibold leading-tight truncate">{community.name}</h1>
+                        <span className="text-gray-500 text-xs truncate">
                             {community.members?.length || 0} members
                         </span>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                     {!isMember ? (
                         <button 
                             onClick={() => setShowRules(true)}
-                            className="px-4 py-1.5 bg-[#00a884] text-white text-sm font-medium rounded-full hover:bg-[#06cf9c] transition-all"
+                            className="px-5 py-2 bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white text-sm font-medium rounded-full hover:shadow-lg transition-all"
                         >
                             Join
                         </button>
@@ -392,7 +392,7 @@ export default function CommunityChat() {
                             {isAdmin && (
                                 <button 
                                     onClick={() => router.push(`/users/eventform?communityId=${communityId}`)}
-                                    className="p-2 text-[#aebac1] hover:text-white rounded-full transition-colors"
+                                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all"
                                     title="Create Event"
                                 >
                                     <FiCalendar size={20} />
@@ -401,22 +401,22 @@ export default function CommunityChat() {
                             <div className="relative">
                                 <button 
                                     onClick={() => setShowMenu(!showMenu)}
-                                    className="p-2 text-[#aebac1] hover:text-white rounded-full transition-colors"
+                                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all"
                                 >
                                     <FiMoreVertical size={20} />
                                 </button>
                                 {showMenu && (
-                                    <div className="absolute right-0 top-full mt-1 bg-[#233138] rounded-lg shadow-xl py-2 min-w-[180px] z-50 border border-[#2a3942]">
+                                    <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl py-2 min-w-[180px] z-50 border border-gray-100">
                                         <button 
                                             onClick={() => { setShowMenu(false); }}
-                                            className="w-full text-left px-4 py-2.5 text-[#d1d7db] text-sm hover:bg-[#182229] transition-colors"
+                                            className="w-full text-left px-4 py-2.5 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
                                         >
                                             Community info
                                         </button>
                                         {isCreator && (
                                             <button 
-                                                onClick={() => { setShowMenu(false); handleDeleteCommunity(); }}
-                                                className="w-full text-left px-4 py-2.5 text-red-400 text-sm hover:bg-[#182229] transition-colors"
+                                                onClick={() => { setShowMenu(false); setDeleteModal({ type: 'community' }); }}
+                                                className="w-full text-left px-4 py-2.5 text-red-500 text-sm hover:bg-red-50 transition-colors"
                                             >
                                                 Delete community
                                             </button>
@@ -432,30 +432,33 @@ export default function CommunityChat() {
             {/* ===== CHAT AREA ===== */}
             <div 
                 ref={chatContainerRef}
-                className="flex-1 overflow-y-auto px-3 md:px-[6%] lg:px-[12%] py-4"
+                className="flex-1 overflow-y-auto px-4 md:px-[8%] lg:px-[15%] py-5"
                 style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8c0b8' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                    backgroundColor: "#efeae2",
+                    backgroundColor: "#f5f7fa",
                 }}
                 onClick={() => showMenu && setShowMenu(false)}
             >
                 {/* Community Welcome Banner */}
-                <div className="bg-[#fffffff0] rounded-lg p-4 mb-4 text-center shadow-sm mx-auto max-w-sm border border-[#e9edef]">
-                    <div className="h-16 w-16 mx-auto rounded-full bg-[#dfe5e7] overflow-hidden mb-3 flex items-center justify-center text-3xl">
+                <div className="bg-white rounded-2xl p-5 mb-6 text-center shadow-sm mx-auto max-w-md border border-gray-100">
+                    <div className="h-16 w-16 mx-auto rounded-full bg-gradient-to-br from-purple-400 to-pink-400 overflow-hidden mb-3 flex items-center justify-center text-3xl shadow-md">
                         {community.profileImage ? (
                             <img src={community.profileImage} className="h-full w-full object-cover" alt="" />
                         ) : "🏛️"}
                     </div>
-                    <h2 className="font-semibold text-[#111b21] text-lg">{community.name}</h2>
-                    <p className="text-[#667781] text-sm mt-1 leading-relaxed">{community.description}</p>
-                    <div className="mt-3 flex items-center justify-center gap-1 text-[#667781] text-xs">
+                    <h2 className="font-semibold text-gray-900 text-lg">{community.name}</h2>
+                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">{community.description}</p>
+                    <div className="mt-3 flex items-center justify-center gap-1 text-gray-500 text-xs">
                         <span>Community · {community.members?.length || 0} members</span>
                     </div>
                 </div>
 
                 {/* Messages */}
                 {reversedPosts.map((post, index) => {
-                    const isMe = user?._id === post.authorId || user?._id === post.author;
+                    // CRITICAL FIX: Properly determine if message is from current user
+                    const postAuthorId = String(post.authorId || post.author || '');
+                    const currentUserId = String(user?._id || '');
+                    const isMe = currentUserId && postAuthorId === currentUserId;
+                    
                     const prevPost = index > 0 ? reversedPosts[index - 1] : null;
                     const isSameAuthor = prevPost && (prevPost.authorId === post.authorId || prevPost.author === post.author);
                     
@@ -482,61 +485,59 @@ export default function CommunityChat() {
                         <React.Fragment key={post._id}>
                             {/* Date Separator */}
                             {showDateSeparator && (
-                                <div className="flex justify-center my-5">
-                                    <span className="bg-white/95 backdrop-blur-sm text-[#667781] text-[11px] font-semibold px-4 py-1.5 rounded-full shadow-sm border border-gray-100">
+                                <div className="flex justify-center my-6">
+                                    <span className="bg-white/90 backdrop-blur-sm text-[#54656f] text-xs font-medium px-4 py-1.5 rounded-full shadow-sm">
                                         {formatDateSeparator(post.createdAt)}
                                     </span>
                                 </div>
                             )}
 
-                            {/* Message Container - CRITICAL: isMe determines left/right alignment */}
-                            <div className={`flex w-full gap-2 ${isMe ? 'justify-end flex-row-reverse' : 'justify-start flex-row'} group ${showAvatar ? 'mt-4' : 'mt-1'}`}>
-                                {/* Avatar - Always visible but can be invisible for spacing */}
-                                <div className={`flex-shrink-0 ${showAvatar ? 'visible' : 'invisible'}`}>
-                                    <div 
-                                        className="h-10 w-10 rounded-full overflow-hidden shadow-sm border-2 border-white cursor-pointer hover:scale-110 transition-transform"
-                                        style={{ backgroundColor: getNameColor(post.authorName || 'user') + '30' }}
-                                        onClick={() => !isMe && isAdmin && handleUserClick(post)}
-                                    >
-                                        <img 
-                                            src={isMe ? myAvatarUrl : otherAvatarUrl} 
-                                            alt={isMe ? 'You' : (post.authorName || 'User')}
-                                            className="h-full w-full object-cover"
-                                            onError={(e) => {
-                                                // Fallback if image fails to load
-                                                e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${isMe ? 'me' : (post.authorName || 'user')}`;
-                                            }}
-                                        />
+                            {/* Message Container */}
+                            <div className={`flex w-full gap-2.5 mb-1 group ${isMe ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}>
+                                {/* Left side: Avatar for others */}
+                                {!isMe && (
+                                    <div className={`flex-shrink-0 self-end ${showAvatar ? 'visible' : 'invisible'}`}>
+                                        <div 
+                                            className="h-9 w-9 rounded-full overflow-hidden shadow-sm border-2 border-white cursor-pointer hover:scale-110 transition-transform"
+                                            style={{ backgroundColor: getNameColor(post.authorName || 'user') + '20' }}
+                                            onClick={() => isAdmin && handleUserClick(post)}
+                                        >
+                                            <img 
+                                                src={otherAvatarUrl} 
+                                                alt={post.authorName || 'User'}
+                                                className="h-full w-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName || 'user'}`;
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Message Content */}
-                                <div className={`relative max-w-[75%] md:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                    {/* Username & Time (Only for others, only when showing avatar) */}
+                                <div className={`relative max-w-[70%] md:max-w-[55%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                    {/* Username (Only for others when showing avatar) */}
                                     {!isMe && showAvatar && (
                                         <div className="flex items-center gap-2 mb-1 px-1">
                                             <span 
-                                                className="text-[13px] font-bold cursor-pointer hover:underline"
+                                                className="text-xs font-semibold cursor-pointer hover:underline"
                                                 style={{ color: getNameColor(post.authorName || 'user') }}
                                                 onClick={() => isAdmin && handleUserClick(post)}
                                             >
                                                 {post.authorName || 'Unknown User'}
                                             </span>
                                             {post.authorType === 'Admin' && (
-                                                <BsShieldFillCheck className="text-[#00a884] text-xs" />
+                                                <BsShieldFillCheck className="text-[#00a884] text-xs" title="Admin" />
                                             )}
-                                            <span className="text-[11px] text-[#8696a0]">
-                                                {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
                                         </div>
                                     )}
 
                                     {/* Message Bubble */}
                                     <div 
-                                        className={`relative px-4 py-2.5 text-[14.5px] leading-[20px] shadow-sm transition-all ${
+                                        className={`relative px-3.5 py-2 text-[15px] leading-[21px] shadow-sm transition-all ${
                                             isMe 
-                                            ? 'bg-gradient-to-br from-[#0084ff] to-[#0066cc] text-white rounded-[18px] rounded-br-md' 
-                                            : 'bg-white text-[#111b21] rounded-[18px] rounded-tl-md border border-gray-100'
+                                            ? 'bg-[#0084ff] text-white rounded-[20px] rounded-br-[4px]' 
+                                            : 'bg-white text-[#111b21] rounded-[20px] rounded-tl-[4px]'
                                         } ${isAdmin && !isMe ? 'cursor-pointer hover:shadow-md' : ''}`}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
@@ -552,8 +553,8 @@ export default function CommunityChat() {
 
                                         {/* Image */}
                                         {post.image && (
-                                            <div className="mb-2 rounded-xl overflow-hidden -mx-1 -mt-1">
-                                                <img src={post.image} alt="attachment" className="max-w-full h-auto object-cover rounded-xl" />
+                                            <div className="mb-2 rounded-2xl overflow-hidden -mx-1 -mt-1">
+                                                <img src={post.image} alt="attachment" className="max-w-full max-h-[300px] object-cover rounded-2xl" />
                                             </div>
                                         )}
 
@@ -562,33 +563,31 @@ export default function CommunityChat() {
                                             {post.content}
                                         </div>
 
-                                        {/* Timestamp (Only for own messages or when not showing avatar) */}
-                                        {(isMe || !showAvatar) && (
-                                            <div className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${
-                                                isMe ? 'text-blue-100' : 'text-[#667781]'
-                                            }`}>
-                                                <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                {isMe && <BsCheck2All className="text-white text-sm" />}
-                                            </div>
-                                        )}
+                                        {/* Timestamp */}
+                                        <div className={`text-[11px] mt-1 flex items-center gap-1 ${
+                                            isMe ? 'justify-end text-white/70' : 'justify-end text-[#667781]'
+                                        }`}>
+                                            <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            {isMe && <BsCheck2All className="text-white/80 text-sm" />}
+                                        </div>
                                     </div>
 
                                     {/* Admin Actions (Hover) */}
                                     {isAdmin && (
-                                        <div className={`absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all`}>
+                                        <div className={`absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
                                             <button 
                                                 onClick={() => handlePinPost(post._id)} 
-                                                className="p-1.5 bg-white rounded-full shadow-lg text-[#8696a0] hover:text-[#00a884] hover:scale-110 transition-all border border-gray-100" 
+                                                className="p-1.5 bg-white rounded-full shadow-md text-[#54656f] hover:text-[#00a884] hover:scale-110 transition-all" 
                                                 title="Pin"
                                             >
-                                                <BsPinAngleFill size={13} />
+                                                <BsPinAngleFill size={12} />
                                             </button>
                                             <button 
-                                                onClick={() => handleDeletePost(post._id)} 
-                                                className="p-1.5 bg-white rounded-full shadow-lg text-[#8696a0] hover:text-red-500 hover:scale-110 transition-all border border-gray-100" 
+                                                onClick={() => setDeleteModal({ type: 'post', postId: post._id })} 
+                                                className="p-1.5 bg-white rounded-full shadow-md text-[#54656f] hover:text-red-500 hover:scale-110 transition-all" 
                                                 title="Delete"
                                             >
-                                                <FiTrash2 size={13} />
+                                                <FiTrash2 size={12} />
                                             </button>
                                         </div>
                                     )}
@@ -602,36 +601,36 @@ export default function CommunityChat() {
 
             {/* ===== INPUT AREA ===== */}
             {isMember ? (
-                <div className="bg-[#f0f2f5] px-2 md:px-4 py-2 flex-shrink-0">
+                <div className="bg-white px-4 md:px-6 py-4 flex-shrink-0 border-t border-gray-100">
                     <div className="max-w-4xl mx-auto w-full">
                         {/* Image Preview */}
                         {postImage && (
-                            <div className="relative mb-2 inline-block bg-white rounded-lg p-2 shadow-sm">
-                                <img src={postImage} alt="Preview" className="h-24 rounded-md object-cover" />
+                            <div className="relative mb-3 inline-block bg-gray-50 rounded-xl p-2 shadow-sm">
+                                <img src={postImage} alt="Preview" className="h-24 rounded-lg object-cover" />
                                 <button 
                                     onClick={() => setPostImage("")} 
-                                    className="absolute -top-2 -right-2 bg-[#54656f] text-white rounded-full p-1 shadow-md hover:bg-[#3b4a54] transition-colors"
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-colors"
                                 >
                                     <FiTrash2 size={12} />
                                 </button>
                             </div>
                         )}
                         
-                        <form onSubmit={handlePost} className="flex items-end gap-2">
+                        <form onSubmit={handlePost} className="flex items-end gap-3">
                             {/* Attachment Button */}
-                            <label className="p-2.5 text-[#54656f] hover:text-[#00a884] cursor-pointer transition-colors flex-shrink-0 rounded-full hover:bg-[#e9edef]">
-                                <FiPlus size={22} />
+                            <label className="p-2.5 text-gray-500 hover:text-[#0084ff] cursor-pointer transition-colors flex-shrink-0 rounded-full hover:bg-gray-100">
+                                <FiImage size={22} />
                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0])} />
                             </label>
 
                             {/* Message Input */}
-                            <div className="flex-1 bg-white rounded-lg flex items-end min-h-[42px] shadow-sm">
+                            <div className="flex-1 bg-gray-50 rounded-[24px] flex items-end min-h-[48px] border border-gray-200 focus-within:border-[#0084ff] transition-colors">
                                 <textarea
                                     ref={textareaRef}
                                     value={content}
                                     onChange={handleTextareaChange}
-                                    placeholder="Type a message"
-                                    className="flex-1 bg-transparent border-none outline-none text-[#3b4a54] placeholder-[#8696a0] py-[9px] px-3 max-h-[120px] min-h-[42px] resize-none text-[15px] leading-[20px]"
+                                    placeholder="Type a message..."
+                                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-400 py-3 px-5 max-h-[120px] min-h-[48px] resize-none text-[15px] leading-[22px]"
                                     rows="1"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -640,32 +639,38 @@ export default function CommunityChat() {
                                         }
                                     }}
                                 />
+                                <button 
+                                    className="p-2.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors flex-shrink-0 mr-2"
+                                    type="button"
+                                >
+                                    <FiSmile size={20} />
+                                </button>
                             </div>
 
                             {/* Send Button */}
                             <button 
                                 type="submit"
                                 disabled={(!content.trim() && !postImage) || isUploading}
-                                className={`p-2.5 rounded-full transition-all flex-shrink-0 ${
+                                className={`p-3 rounded-full transition-all flex-shrink-0 shadow-md ${
                                     (!content.trim() && !postImage) 
-                                    ? 'bg-transparent text-[#8696a0]' 
-                                    : 'bg-[#00a884] text-white hover:bg-[#06cf9c] shadow-md'
+                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white hover:shadow-lg hover:scale-105'
                                 }`}
                             >
                                 {isUploading ? (
                                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
                                 ) : (
-                                    <FiSend size={20} />
+                                    <FiSend size={18} />
                                 )}
                             </button>
                         </form>
                     </div>
                 </div>
             ) : (
-                <div className="bg-[#f0f2f5] border-t border-[#e9edef] p-4 pb-6 text-center flex-shrink-0">
+                <div className="bg-white border-t border-gray-100 p-5 pb-6 text-center flex-shrink-0">
                     <button 
                         onClick={() => setShowRules(true)} 
-                        className="w-full max-w-md bg-[#00a884] text-white font-medium py-3 rounded-lg hover:bg-[#06cf9c] transition-all active:scale-[0.98]"
+                        className="w-full max-w-md bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white font-medium py-3.5 rounded-full hover:shadow-lg transition-all active:scale-[0.98]"
                     >
                         Join Community to Chat
                     </button>
@@ -674,39 +679,39 @@ export default function CommunityChat() {
 
             {/* ===== RULES MODAL ===== */}
             {showRules && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4" onClick={() => setShowRules(false)}>
-                    <div className="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#008069] p-6 text-white text-center">
-                            <div className="h-16 w-16 bg-white/20 rounded-full mx-auto flex items-center justify-center text-3xl mb-3">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowRules(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fadeIn" onClick={e => e.stopPropagation()}>
+                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white text-center">
+                            <div className="h-16 w-16 bg-white/20 backdrop-blur-sm rounded-full mx-auto flex items-center justify-center text-3xl mb-3">
                                 📜
                             </div>
-                            <h2 className="text-xl font-semibold">Community Rules</h2>
-                            <p className="text-white/80 text-sm mt-1">Please review before joining</p>
+                            <h2 className="text-xl font-bold">Community Rules</h2>
+                            <p className="text-white/90 text-sm mt-1">Please review before joining</p>
                         </div>
                         
-                        <div className="p-5 max-h-60 overflow-y-auto space-y-3">
+                        <div className="p-6 max-h-60 overflow-y-auto space-y-3">
                             {community.rules && community.rules.length > 0 ? (
                                 community.rules.map((rule, i) => (
-                                    <div key={i} className="flex gap-3 text-sm text-[#3b4a54]">
-                                        <span className="font-bold text-[#00a884] flex-shrink-0">{i + 1}.</span>
+                                    <div key={i} className="flex gap-3 text-sm text-gray-700">
+                                        <span className="font-bold text-purple-500 flex-shrink-0">{i + 1}.</span>
                                         <span>{rule}</span>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-center text-[#8696a0] italic">No specific rules — just be respectful!</p>
+                                <p className="text-center text-gray-500 italic">No specific rules — just be respectful!</p>
                             )}
                         </div>
 
-                        <div className="flex border-t border-[#e9edef]">
+                        <div className="flex border-t border-gray-100">
                             <button 
                                 onClick={() => setShowRules(false)} 
-                                className="flex-1 py-3.5 text-[#667781] font-medium hover:bg-[#f0f2f5] transition-colors"
+                                className="flex-1 py-4 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button 
                                 onClick={confirmJoin} 
-                                className="flex-1 py-3.5 text-[#00a884] font-semibold hover:bg-[#f0f2f5] transition-colors border-l border-[#e9edef]"
+                                className="flex-1 py-4 text-[#0084ff] font-semibold hover:bg-blue-50 transition-colors border-l border-gray-100"
                             >
                                 I Agree & Join
                             </button>
@@ -717,28 +722,28 @@ export default function CommunityChat() {
 
             {/* ===== USER MANAGEMENT MODAL ===== */}
             {selectedUser && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4" onClick={() => setSelectedUser(null)}>
-                    <div className="bg-white rounded-xl w-full max-w-xs shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#202c33] p-5 text-center">
-                            <div className="h-20 w-20 mx-auto rounded-full bg-[#2a3942] overflow-hidden mb-3 border-4 border-[#2a3942]">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setSelectedUser(null)}>
+                    <div className="bg-white rounded-2xl w-full max-w-xs shadow-2xl overflow-hidden animate-fadeIn" onClick={e => e.stopPropagation()}>
+                        <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 text-center">
+                            <div className="h-20 w-20 mx-auto rounded-full bg-white/10 backdrop-blur-sm overflow-hidden mb-3 border-4 border-white/20">
                                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.name}`} alt="avatar" />
                             </div>
-                            <h3 className="font-semibold text-lg text-[#e9edef]">{selectedUser.name}</h3>
-                            <span className="inline-block px-3 py-1 rounded-full bg-[#2a3942] text-xs font-medium text-[#8696a0] mt-1 uppercase tracking-wide">
+                            <h3 className="font-semibold text-lg text-white">{selectedUser.name}</h3>
+                            <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium text-white/80 mt-2 uppercase tracking-wide">
                                 {selectedUser.role}
                             </span>
                         </div>
 
-                        <div className="p-4 space-y-2">
-                            <p className="text-xs font-medium text-[#8696a0] uppercase tracking-wider mb-2">Change Role</p>
+                        <div className="p-5 space-y-2">
+                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Change Role</p>
                             {['member', 'partner', 'admin'].map((role) => (
                                 <button 
                                     key={role}
                                     onClick={() => handleUpdateRole(role)}
-                                    className={`w-full py-3 rounded-lg flex items-center justify-between px-4 transition-all capitalize ${
+                                    className={`w-full py-3 rounded-xl flex items-center justify-between px-4 transition-all capitalize font-medium ${
                                         selectedUser.role === role 
-                                        ? 'bg-[#00a884] text-white' 
-                                        : 'bg-[#f0f2f5] hover:bg-[#e9edef] text-[#3b4a54]'
+                                        ? 'bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white shadow-md' 
+                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                                     }`}
                                 >
                                     <span>{role}</span>
@@ -748,11 +753,11 @@ export default function CommunityChat() {
                                 </button>
                             ))}
                             
-                            <div className="h-px bg-[#e9edef] my-3"></div>
+                            <div className="h-px bg-gray-200 my-4"></div>
                             
                             <button 
                                 onClick={() => setRemoveMemberModal(selectedUser)}
-                                className="w-full py-3 rounded-lg bg-red-50 text-red-600 font-medium hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3 rounded-xl bg-red-50 text-red-600 font-medium hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                             >
                                 <FiUserX /> Remove Member
                             </button>
@@ -768,10 +773,10 @@ export default function CommunityChat() {
 
             {/* Message Toast */}
             {message && (
-                <div className="fixed top-20 right-6 z-50 animate-fadeIn">
-                    <div className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 ${message.type === 'error' ? 'bg-red-50 text-red-700 border-2 border-red-200' : 'bg-green-50 text-green-700 border-2 border-green-200'}`}>
-                        <span className="font-bold">{message.text}</span>
-                        <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
+                <div className="fixed top-24 right-6 z-50 animate-fadeIn">
+                    <div className={`px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-sm ${message.type === 'error' ? 'bg-red-50/95 text-red-700 border border-red-200' : 'bg-green-50/95 text-green-700 border border-green-200'}`}>
+                        <span className="font-medium">{message.text}</span>
+                        <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full transition-colors">
                             ✕
                         </button>
                     </div>
