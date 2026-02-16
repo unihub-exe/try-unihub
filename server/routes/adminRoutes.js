@@ -31,7 +31,9 @@ router.route("/stats").get(getSystemStats);
 router.route("/testimonials").get(getTestimonials);
 
 // Settings routes
-router.route("/settings").get(getSettings).post(authenticate, requireRole("ADMIN"), updateSettings);
+router.route("/settings")
+    .get(authenticate, requireRole("ADMIN"), getSettings)
+    .post(authenticate, requireRole("ADMIN"), updateSettings);
 
 // Payout management routes
 router.route("/payouts").get(authenticate, requireRole("ADMIN"), getAllPayouts);

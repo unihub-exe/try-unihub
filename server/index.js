@@ -275,7 +275,117 @@ function startEarningsScheduler() {
         }
     });
     
-    console.log("Earnings unlock, suspension, and premium expiry schedulers started");
+    // Automatic payout processing - runs every hour
+    cron.schedule('0 * * * *', async () => {
+        try {
+            console.log("Running automatic payout processing check...");
+            
+            const now = new Date();
+            const PayoutRequest = require("./models/PayoutRequest");
+            
+            // Find pending payouts where timer has expired
+            const readyPayouts = await PayoutRequest.find({
+                status: 'pending',
+                scheduledProcessingAt: { $lte: now }
+            });
+            
+            if (readyPayouts.length === 0) {
+                console.log("No payouts ready for processing");
+                return;
+            }
+            
+            console.log(`Found ${readyPayouts.length} payouts ready for processing`);
+            
+            // Process each payout via Paystack
+            const { createTransferRecipient, initiateTransfer } = require("./utils/paystackTransfer");
+            
+            for (const payout of readyPayouts) {
+                try {
+                    // Update status to processing
+                    payout.status = 'processing';
+                    await payout.save();
+                    
+                    // Create transfer recipient
+                    const recipientResult = await createTransferRecipient({
+                        accountName: payout.accountDetails.accountName,
+                        accountNumber: payout.accountDetails.accountNumber,
+                        bankCode: payout.accountDetails.bankCode
+                    });
+                    
+                    if (!recipientResult.success) {
+                        throw new Error(`Failed to create recipient: ${recipientResult.error}`);
+                    }
+                    
+                    // Initiate transfer
+                    const transferResult = await initiateTransfer({
+                        recipientCode: recipientResult.recipientCode,
+                        amount: payout.amount,
+                        reason: `UniHub Payout - ${payout._id}`,
+                        reference: `PAYOUT_${payout._id}_${Date.now()}`
+                    });
+                    
+                    if (!transferResult.success) {
+                        throw new Error(`Failed to initiate transfer: ${transferResult.error}`);
+                    }
+                    
+                    payout.paystackReference = transferResult.reference;
+                    payout.status = 'completed';
+                    payout.processedAt = new Date();
+                    await payout.save();
+                    
+                    // Update user's pending balance
+                    const User = require("./models/user");
+                    const user = await User.findOne({ user_token: payout.userId });
+                    if (user) {
+                        user.wallet.pendingBalance -= payout.amount;
+                        await user.save();
+                    }
+                    
+                    // Update transaction status
+                    const Transaction = require("./models/Transaction");
+                    await Transaction.updateOne(
+                        { reference: payout._id.toString() },
+                        { status: 'completed' }
+                    );
+                    
+                    // Notify user
+                    const { createNotification } = require("./controllers/notificationController");
+                    await createNotification(
+                        payout.userId,
+                        'payout_completed',
+                        'Payout Completed',
+                        `Your payout of ₦${payout.amount.toLocaleString()} has been processed. Funds will arrive in your bank account within 24 hours (T+1 from Paystack).`,
+                        '/users/wallet'
+                    );
+                    
+                    console.log(`Processed payout ${payout._id} for user ${payout.userId}`);
+                } catch (payoutError) {
+                    console.error(`Error processing payout ${payout._id}:`, payoutError);
+                    
+                    // Mark as failed
+                    payout.status = 'failed';
+                    payout.adminNotes = `Auto-processing failed: ${payoutError.message}`;
+                    await payout.save();
+                    
+                    // Notify user
+                    const { createNotification } = require("./controllers/notificationController");
+                    await createNotification(
+                        payout.userId,
+                        'payout_failed',
+                        'Payout Failed',
+                        `Your payout of ₦${payout.amount.toLocaleString()} could not be processed automatically. Our team will review and process it manually.`,
+                        '/users/wallet'
+                    );
+                }
+            }
+            
+            console.log("Automatic payout processing completed");
+        } catch (error) {
+            console.error("Automatic payout scheduler error:", error);
+        }
+    });
+    
+    console.log("Earnings unlock, suspension, premium expiry, and automatic payout schedulers started");
 }
 
 // Routes

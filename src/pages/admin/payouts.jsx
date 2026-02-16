@@ -164,13 +164,20 @@ export default function AdminPayouts() {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Organizer</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Bank Details</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Requested</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Timer</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {payouts.map((payout) => (
+                  {payouts.map((payout) => {
+                    const now = new Date();
+                    const scheduledAt = payout.scheduledProcessingAt ? new Date(payout.scheduledProcessingAt) : null;
+                    const timeRemaining = scheduledAt ? Math.max(0, scheduledAt - now) : 0;
+                    const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
+                    const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    return (
                     <tr key={payout._id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-bold text-gray-900">{payout.userName}</div>
@@ -180,17 +187,34 @@ export default function AdminPayouts() {
                         <div className="font-bold text-gray-900 text-lg">₦{payout.amount.toLocaleString()}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 font-medium">{payout.bankName}</div>
-                        <div className="text-xs text-gray-500">{payout.accountNumber}</div>
-                        <div className="text-xs text-gray-500">{payout.accountName}</div>
+                        <div className="text-sm text-gray-900 font-medium">{payout.accountDetails?.bankName}</div>
+                        <div className="text-xs text-gray-500">{payout.accountDetails?.accountNumber}</div>
+                        <div className="text-xs text-gray-500">{payout.accountDetails?.accountName}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(payout.createdAt).toLocaleDateString()}
+                      <td className="px-6 py-4">
+                        {payout.status === 'pending' && scheduledAt ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <FiClock className="text-blue-500" />
+                              <span className="font-bold text-gray-900">
+                                {timeRemaining > 0 ? `${hoursRemaining}h ${minutesRemaining}m` : 'Ready'}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {timeRemaining > 0 ? 'until auto-process' : 'Processing soon'}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500">
+                            {payout.processedAt ? new Date(payout.processedAt).toLocaleDateString() : '-'}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${
-                          payout.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          payout.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          payout.status === 'approved' || payout.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          payout.status === 'rejected' || payout.status === 'failed' ? 'bg-red-100 text-red-700' :
+                          payout.status === 'processing' ? 'bg-blue-100 text-blue-700' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {payout.status}
@@ -219,7 +243,7 @@ export default function AdminPayouts() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

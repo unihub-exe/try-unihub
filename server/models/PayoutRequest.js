@@ -43,6 +43,19 @@ const payoutRequestSchema = new mongoose.Schema({
     paystackReference: {
         type: String,
         default: null
+    },
+    // Timer fields for automatic processing
+    timerStartedAt: {
+        type: Date,
+        default: null
+    },
+    scheduledProcessingAt: {
+        type: Date,
+        default: null
+    },
+    processingHours: {
+        type: Number,
+        default: null
     }
 });
 

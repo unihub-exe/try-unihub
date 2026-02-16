@@ -107,13 +107,30 @@ exports.requestPayout = async (req, res) => {
             return res.status(400).send({ msg: "Minimum withdrawal amount is ₦1,000" });
         }
 
-        // Create payout request
+        // Get platform settings for payout processing time
+        const AdminSettings = require("../models/AdminSettings");
+        let settings = await AdminSettings.findOne();
+        if (!settings) {
+            settings = await AdminSettings.create({
+                premiumPricePerDay: 100,
+                payoutProcessingHours: 48
+            });
+        }
+
+        const processingHours = settings.payoutProcessingHours || 48;
+        const timerStartedAt = new Date();
+        const scheduledProcessingAt = new Date(timerStartedAt.getTime() + processingHours * 60 * 60 * 1000);
+
+        // Create payout request with timer
         const payoutRequest = await PayoutRequest.create({
             userId,
             userName: user.displayName || user.username,
             amount,
             accountDetails: user.wallet.bankDetails,
-            status: 'pending'
+            status: 'pending',
+            timerStartedAt,
+            scheduledProcessingAt,
+            processingHours
         });
 
         // Deduct from available balance and add to pending
@@ -136,14 +153,15 @@ exports.requestPayout = async (req, res) => {
             userId,
             'general',
             'Payout Requested',
-            `Your withdrawal request of ₦${amount.toLocaleString()} is being processed. You'll receive payment within 48 hours.`,
+            `Your withdrawal request of ₦${amount.toLocaleString()} is being processed. Timer started - payment will be initiated in ${processingHours} hours.`,
             '/users/wallet'
         );
 
         res.send({ 
             msg: "Payout request submitted successfully",
             payoutRequest,
-            estimatedTime: "Within 48 hours"
+            estimatedTime: `${processingHours} hours`,
+            scheduledProcessingAt
         });
     } catch (error) {
         console.error("Request payout error:", error);
