@@ -44,11 +44,13 @@ function EventPage() {
   }, [router.query]);
 
   const share = () => {
+    const shareText = `🎉 ${eventData.name}\n\n📅 ${eventData.date} at ${eventData.time}\n📍 ${eventData.venue}\n💰 ${Number(eventData.price) === 0 ? 'Free' : `₦${eventData.price}`}`;
+    
     if (navigator.share) {
       navigator
         .share({
           title: eventData.name,
-          text: "Check out this event!",
+          text: shareText,
           url: window.location.href,
         })
         .then(() => console.log("Successful share"))
@@ -153,10 +155,47 @@ function EventPage() {
       </div>
     );
 
+  const eventUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const eventPrice = Number(eventData.price) === 0 ? 'Free' : `₦${eventData.price}`;
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-slate-900 pb-20">
       <Head>
         <title>{eventData.name} | UniHub</title>
+        <meta name="description" content={eventData.description?.substring(0, 160) || `Join ${eventData.name} on ${eventData.date} at ${eventData.venue}`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="event" />
+        <meta property="og:url" content={eventUrl} />
+        <meta property="og:title" content={eventData.name} />
+        <meta property="og:description" content={eventData.description?.substring(0, 200) || `Join us for ${eventData.name}. ${eventData.date} at ${eventData.time}. ${eventData.venue}.`} />
+        <meta property="og:image" content={eventData.profile || eventData.cover} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={eventData.name} />
+        <meta property="og:site_name" content="UniHub" />
+        
+        {/* Event specific OG tags */}
+        <meta property="event:start_time" content={eventData.date} />
+        <meta property="event:location" content={eventData.venue} />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={eventUrl} />
+        <meta name="twitter:title" content={eventData.name} />
+        <meta name="twitter:description" content={eventData.description?.substring(0, 200) || `Join us for ${eventData.name}. ${eventData.date} at ${eventData.time}.`} />
+        <meta name="twitter:image" content={eventData.profile || eventData.cover} />
+        <meta name="twitter:image:alt" content={eventData.name} />
+        
+        {/* WhatsApp specific (uses OG tags) */}
+        <meta property="og:locale" content="en_US" />
+        
+        {/* Additional meta tags */}
+        <meta name="author" content={eventData.organizer} />
+        <meta name="keywords" content={`${eventData.name}, ${eventData.category}, ${eventData.organizer}, UniHub events, ${eventData.venue}`} />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href={eventUrl} />
       </Head>
       <UserNavBar />
 
@@ -362,7 +401,9 @@ function EventPage() {
                   <FiCopy className="text-lg" /> Copy Link
                 </button>
                 <a
-                  href={`whatsapp://send?text=Check out this event: ${eventData.name} ${window.location.href}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(`🎉 ${eventData.name}\n\n📅 ${eventData.date} at ${eventData.time}\n📍 ${eventData.venue}\n💰 ${eventPrice}\n\nCheck it out: ${eventUrl}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-6 py-3.5 bg-[#25D366] text-white rounded-xl font-bold text-sm hover:bg-[#1ebd59] transition-all flex items-center gap-2 shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 transform hover:-translate-y-0.5"
                 >
                   <FiMessageCircle className="text-lg" /> WhatsApp
