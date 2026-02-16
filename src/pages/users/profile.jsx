@@ -1,5 +1,6 @@
 import UserNavBar from "@/components/UserNavBar";
 import BackButton from "@/components/BackButton";
+import InstallAppButton from "@/components/InstallAppButton";
 import { getUserToken } from "@/utils/getUserToken";
 import Image from "next/image";
 import { useRouter } from "next/router";
@@ -234,6 +235,11 @@ export default function UserProfile() {
                                 <FiEdit3 className="w-4 h-4" />
                                 Edit Profile
                             </button>
+
+                            {/* Install App Button */}
+                            <div className="mt-4">
+                                <InstallAppButton variant="button" />
+                            </div>
                             
                             <div className="mt-8 pt-6 border-t border-gray-100">
                                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Social Links</h3>
