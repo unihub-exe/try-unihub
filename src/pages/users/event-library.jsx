@@ -15,6 +15,8 @@ export default function EventLibrary() {
   const [viewMode, setViewMode] = useState("events"); // "events" or "tickets"
   const [events, setEvents] = useState({ upcoming: [], live: [], past: [] });
   const [tickets, setTickets] = useState([]);
+  const [filteredTickets, setFilteredTickets] = useState([]);
+  const [ticketFilter, setTicketFilter] = useState("all"); // "all", "free", "paid", or specific ticket type
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -82,6 +84,23 @@ export default function EventLibrary() {
 
     fetchEvents();
   }, [userId, router]);
+
+  // Filter tickets when filter changes
+  useEffect(() => {
+    if (ticketFilter === "all") {
+      setFilteredTickets(tickets);
+    } else {
+      setFilteredTickets(tickets.filter(ticket => {
+        if (ticketFilter === "free") {
+          return ticket.event.price === 0 || ticket.ticketType?.toLowerCase().includes("free");
+        } else if (ticketFilter === "paid") {
+          return ticket.event.price > 0;
+        } else {
+          return ticket.ticketType === ticketFilter;
+        }
+      }));
+    }
+  }, [tickets, ticketFilter]);
 
   const EmptyState = ({ type }) => (
     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
@@ -191,21 +210,51 @@ export default function EventLibrary() {
               viewMode === "tickets" ? (
                 /* Tickets View */
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <FiCreditCard className="text-xl text-[color:var(--secondary-color)]" />
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      Your Tickets
-                    </h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <FiCreditCard className="text-xl text-[color:var(--secondary-color)]" />
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        Your Tickets
+                      </h2>
+                    </div>
+                    
+                    {/* Ticket Filter */}
+                    {tickets.length > 0 && (
+                      <select
+                        value={ticketFilter}
+                        onChange={(e) => setTicketFilter(e.target.value)}
+                        className="px-4 py-2 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-[color:var(--secondary-color)] focus:border-transparent outline-none"
+                      >
+                        <option value="all">All Tickets ({tickets.length})</option>
+                        <option value="free">Free Tickets</option>
+                        <option value="paid">Paid Tickets</option>
+                        <option value="General Admission">General Admission</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Premium">Premium</option>
+                      </select>
+                    )}
                   </div>
-                  {tickets.length > 0 ? (
+                  {filteredTickets.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {tickets.map((ticket, index) => (
+                      {filteredTickets.map((ticket, index) => (
                         <TicketCard
                           key={`${ticket.eventId}-${index}`}
                           ticket={ticket}
                           event={ticket.event}
                         />
                       ))}
+                    </div>
+                  ) : tickets.length > 0 ? (
+                    <div className="text-center py-20 bg-gray-50 rounded-2xl">
+                      <FiCreditCard className="text-5xl text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">No tickets match this filter</h3>
+                      <p className="text-gray-500 mb-6">Try selecting a different filter</p>
+                      <button
+                        onClick={() => setTicketFilter("all")}
+                        className="px-6 py-2.5 bg-[color:var(--primary-color)] text-white font-bold rounded-full hover:shadow-lg transition-all"
+                      >
+                        Show All Tickets
+                      </button>
                     </div>
                   ) : (
                     <div className="text-center py-20 bg-gray-50 rounded-2xl">
