@@ -16,6 +16,7 @@ export default function Dropdown({ userData }) {
     const router = useRouter();
     const [showDropdown, setShowDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [avatarError, setAvatarError] = useState(false);
     const dropdownRef = useRef(null);
 
     const toggleDropdown = () => {
@@ -49,6 +50,14 @@ export default function Dropdown({ userData }) {
     const userInitials = userData?.username
         ? userData.username.charAt(0).toUpperCase()
         : userData?.displayName?.charAt(0)?.toUpperCase() || "U";
+    
+    // Check if avatar URL is valid (not a local /uploads/ path)
+    const isValidAvatarUrl = userAvatar && !userAvatar.includes('/uploads/') && !avatarError;
+    
+    // Reset avatar error when userData changes
+    useEffect(() => {
+        setAvatarError(false);
+    }, [userData?.avatar]);
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -57,8 +66,14 @@ export default function Dropdown({ userData }) {
                 className="flex items-center gap-2 hover:bg-gray-100 rounded-full p-1 pr-3 transition-colors border border-transparent hover:border-gray-200"
             >
                 <div className="relative h-8 w-8 rounded-full overflow-hidden bg-[color:var(--secondary-color)]">
-                    {userAvatar ? (
-                        <Image src={userAvatar} alt="Avatar" fill className="object-cover" />
+                    {isValidAvatarUrl ? (
+                        <Image 
+                            src={userAvatar} 
+                            alt="Avatar" 
+                            fill 
+                            className="object-cover"
+                            onError={() => setAvatarError(true)}
+                        />
                     ) : (
                         <div className="h-full w-full flex items-center justify-center text-white font-bold text-sm">
                             {userInitials}
@@ -80,8 +95,14 @@ export default function Dropdown({ userData }) {
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                         <div className="flex items-center gap-3">
                             <div className="relative h-12 w-12 rounded-full overflow-hidden bg-[color:var(--secondary-color)] shrink-0">
-                                {userAvatar ? (
-                                    <Image src={userAvatar} alt="Avatar" fill className="object-cover" />
+                                {isValidAvatarUrl ? (
+                                    <Image 
+                                        src={userAvatar} 
+                                        alt="Avatar" 
+                                        fill 
+                                        className="object-cover"
+                                        onError={() => setAvatarError(true)}
+                                    />
                                 ) : (
                                     <div className="h-full w-full flex items-center justify-center text-white font-bold">
                                         {userInitials}
