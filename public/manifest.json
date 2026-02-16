@@ -2,7 +2,8 @@
   "name": "UniHub - University Events Platform",
   "short_name": "UniHub",
   "description": "Discover and manage university events, connect with your campus community",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
@@ -24,17 +25,23 @@
       "src": "/favicon_io/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
-    },
-    {
-      "src": "/favicon_io/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicon_io/favicon-16x16.png",
-      "sizes": "16x16",
-      "type": "image/png"
     }
   ],
-  "categories": ["education", "social", "events"]
+  "categories": ["education", "social", "events"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your event dashboard",
+      "url": "/users/dashboard?source=pwa",
+      "icons": [{ "src": "/favicon_io/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Events",
+      "short_name": "Events",
+      "description": "Browse events",
+      "url": "/users/dashboard?source=pwa",
+      "icons": [{ "src": "/favicon_io/android-chrome-192x192.png", "sizes": "192x192" }]
+    }
+  ]
 }

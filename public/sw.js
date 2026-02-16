@@ -1,20 +1,36 @@
-const CACHE_NAME = 'unihub-cache-v3';
+const CACHE_NAME = 'unihub-cache-v4';
 const ASSETS = [
+  '/',
   '/favicon_io/favicon.ico',
   '/favicon_io/android-chrome-192x192.png',
-  '/favicon_io/android-chrome-512x512.png'
+  '/favicon_io/android-chrome-512x512.png',
+  '/img/unihub-logo.png'
 ];
+
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Caching app shell');
+      return cache.addAll(ASSETS);
+    })
   );
+  self.skipWaiting();
 });
+
 self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => {
-      if (k !== CACHE_NAME) return caches.delete(k);
-    })))
+    caches.keys().then((keys) => Promise.all(
+      keys.map((k) => {
+        if (k !== CACHE_NAME) {
+          console.log('Deleting old cache:', k);
+          return caches.delete(k);
+        }
+      })
+    ))
   );
+  return self.clients.claim();
 });
 self.addEventListener('fetch', (event) => {
   const req = event.request;

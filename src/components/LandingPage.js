@@ -1,6 +1,7 @@
 import FeaturesBento from "@/components/Landing_Page_partials/FeaturesBento";
 import Header from "@/components/Landing_Page_partials/Header";
 import HeroHome from "@/components/Landing_Page_partials/HeroHome";
+import InstallAppButton from "@/components/InstallAppButton";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -367,6 +368,9 @@ function LandingPage() {
 
           <LiquidFooter />
         </main>
+        
+        {/* Install App Banner - Shows on landing page for PWA installation */}
+        <InstallAppButton variant="banner" />
       </div>
     </div>
   );
