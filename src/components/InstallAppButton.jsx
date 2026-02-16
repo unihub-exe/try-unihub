@@ -48,6 +48,14 @@ export default function InstallAppButton({ variant = "button" }) {
 
     const handleInstallClick = async () => {
         if (!deferredPrompt) {
+            // Show instructions if install prompt not available
+            alert(
+                "To install UniHub:\n\n" +
+                "Chrome/Edge (Desktop): Click the install icon in the address bar\n" +
+                "Chrome (Android): Tap menu (⋮) → 'Install app' or 'Add to Home screen'\n" +
+                "Safari (iOS): Tap Share → 'Add to Home Screen'\n" +
+                "Firefox: Tap menu → 'Install'"
+            );
             return;
         }
 
@@ -73,8 +81,26 @@ export default function InstallAppButton({ variant = "button" }) {
         localStorage.setItem('pwa_banner_dismissed', 'true');
     };
 
-    // Don't show anything if not installable or already installed
-    if (!isInstallable || isInstalled) {
+    // Show "Already Installed" message if installed
+    if (isInstalled && variant === "button") {
+        return (
+            <div className="w-full flex items-center justify-between p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <FiSmartphone className="text-xl text-green-600" />
+                    </div>
+                    <div className="text-left">
+                        <div className="font-bold text-green-900">App Already Installed</div>
+                        <div className="text-xs text-green-700">UniHub is installed on your device</div>
+                    </div>
+                </div>
+                <div className="text-2xl">✓</div>
+            </div>
+        );
+    }
+
+    // Don't show banner if not installable or already installed
+    if ((!isInstallable || isInstalled) && variant === "banner") {
         return null;
     }
 
