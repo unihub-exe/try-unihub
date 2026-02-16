@@ -428,30 +428,19 @@ app.use("/", userInteractionRoutes);
 app.use("/reports", reportRoutes);
 app.use("/wallet", walletRoutes);
 
-// Image Upload Endpoint with Security
+// Image Upload Endpoint with Cloudinary
 const multer = require("multer");
-const { v4: uuidv4 } = require("uuid");
+const cloudinary = require("cloudinary").v2;
 
-// Secure file upload configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, "uploads");
-        // Ensure directory exists
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const allowedExtensions = /jpeg|jpg|png|gif|webp/;
-        if (!allowedExtensions.test(ext)) {
-            return cb(new Error("Only image files are allowed"), false);
-        }
-        const uniqueName = `${uuidv4()}${ext}`;
-        cb(null, uniqueName);
-    }
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Use memory storage for Cloudinary uploads
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage,
@@ -464,29 +453,43 @@ const upload = multer({
     }
 });
 
-app.post("/upload/image", upload.single("file"), (req, res) => {
+app.post("/upload/image", upload.single("file"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: "No file uploaded" });
         }
-        // Use HTTPS in production, HTTP in development
-        const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
-        const baseUrl = `${protocol}://${req.get("host")}`;
-        res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
+
+        // Upload to Cloudinary using upload_stream
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: "unihub",
+                resource_type: "image",
+                transformation: [
+                    { width: 1200, height: 1200, crop: "limit" },
+                    { quality: "auto", fetch_format: "auto" }
+                ]
+            },
+            (error, result) => {
+                if (error) {
+                    console.error("Cloudinary upload error:", error);
+                    return res.status(500).json({ error: "Upload failed", message: error.message });
+                }
+                res.json({ 
+                    url: result.secure_url,
+                    public_id: result.public_id
+                });
+            }
+        );
+
+        // Pipe the buffer to Cloudinary
+        const bufferStream = require('stream').Readable.from(req.file.buffer);
+        bufferStream.pipe(uploadStream);
+
     } catch (error) {
         console.error("Upload error:", error);
         res.status(500).json({ error: "Upload failed", message: error.message });
     }
 });
-
-// Serve uploaded files securely
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
-    setHeaders: (res) => {
-        res.setHeader("X-Content-Type-Options", "nosniff");
-        res.setHeader("Cache-Control", "public, max-age=31536000");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-    }
-}));
 
 // Serve static files with security headers
 app.use(express.static(path.join(__dirname, "../public"), {
