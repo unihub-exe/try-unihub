@@ -431,6 +431,7 @@ app.use("/wallet", walletRoutes);
 // Image Upload Endpoint with Cloudinary
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
+const stream = require("stream");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -482,7 +483,7 @@ app.post("/upload/image", upload.single("file"), async (req, res) => {
         );
 
         // Pipe the buffer to Cloudinary
-        const bufferStream = require('stream').Readable.from(req.file.buffer);
+        const bufferStream = stream.Readable.from(req.file.buffer);
         bufferStream.pipe(uploadStream);
 
     } catch (error) {
