@@ -184,6 +184,16 @@ exports.verifyOtp = async (req, res) => {
     role,
   });
 
+  // Create welcome notification
+  const { createNotification } = require("./notificationController");
+  await createNotification(
+    token,
+    'general',
+    'Welcome to UniHub! 🎉',
+    `Hi ${name || username}! Welcome to UniHub, your campus event hub. Discover events, connect with communities, and make the most of your university experience.`,
+    '/users/dashboard'
+  );
+
   sendWelcomeEmail(user).catch(console.error);
   await OtpAuth.deleteMany({ email });
 

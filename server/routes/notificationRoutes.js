@@ -8,6 +8,8 @@ const {
     deleteNotification
 } = require("../controllers/notificationController");
 
+// User notifications (accepts token in body for compatibility)
+router.post("/user", getUserNotifications);
 router.post("/", authenticate, getUserNotifications);
 router.patch("/:notificationId/read", authenticate, markAsRead);
 router.patch("/read-all", authenticate, markAllAsRead);

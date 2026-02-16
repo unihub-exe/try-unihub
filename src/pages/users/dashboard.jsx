@@ -20,7 +20,7 @@ function UserDashboard() {
     keyword: "",
     category: "",
     dateRange: "",
-    price: [0, 10000000],
+    price: [0, 100000],
     isPremium: false,
   });
   const [showGuide, setShowGuide] = useState(false);
@@ -110,7 +110,7 @@ function UserDashboard() {
       keyword: "",
       category: "",
       dateRange: "",
-      price: [0, 20000000],
+      price: [0, 200000],
       isPremium: false,
     });
     setShowInlineFilter(false);

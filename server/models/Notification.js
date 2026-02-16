@@ -18,9 +18,14 @@ const notificationSchema = new mongoose.Schema({
             'account_deleted',
             'payout_approved',
             'payout_rejected',
+            'payout_completed',
+            'payout_failed',
             'event_cancelled',
             'refund_processed',
+            'premium_expired',
+            'premium_expiring',
             'follow',
+            'announcement',
             'general'
         ],
         required: true

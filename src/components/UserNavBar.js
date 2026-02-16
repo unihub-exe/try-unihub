@@ -14,6 +14,7 @@ export default function NavBar() {
   const [userData, setUserData] = useState({});
   const [showAnnouncements, setShowAnnouncements] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [announcementCount, setAnnouncementCount] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -52,6 +53,24 @@ export default function NavBar() {
       }
     };
 
+    const fetchNotifications = async () => {
+      if (!userIdCookie) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/notifications/user`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_token: userIdCookie }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch (e) {
+        console.error("Failed to fetch notifications:", e);
+      }
+    };
+
     const fetchAnnouncements = async () => {
       try {
         const res = await fetch(`${API_URL}/user/announcements`);
@@ -61,18 +80,19 @@ export default function NavBar() {
           const count = data.filter(
             (a) => !lastRead || new Date(a.createdAt) > new Date(lastRead)
           ).length;
-          setUnreadCount(count);
+          setAnnouncementCount(count);
         }
       } catch (e) {}
     };
 
     fetchUserData();
+    fetchNotifications();
     fetchAnnouncements();
   }, [router, userIdCookie]);
 
   const handleShowAnnouncements = () => {
     setShowAnnouncements(true);
-    setUnreadCount(0);
+    setAnnouncementCount(0);
     localStorage.setItem("lastReadAnnouncementTime", new Date().toISOString());
   };
 
