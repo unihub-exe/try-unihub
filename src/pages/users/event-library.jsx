@@ -2,16 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import UserNavBar from "@/components/UserNavBar";
 import EventCard from "@/components/EventCard";
+import TicketCard from "@/components/TicketCard";
 import BackButton from "@/components/BackButton";
 import { getUserToken } from "@/utils/getUserToken";
 import { API_URL } from "@/utils/config";
-import { FiCalendar, FiClock, FiArchive, FiRadio } from "react-icons/fi";
+import { FiCalendar, FiClock, FiArchive, FiRadio, FiGrid, FiCreditCard } from "react-icons/fi";
 
 export default function EventLibrary() {
   const router = useRouter();
   const userId = getUserToken();
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [viewMode, setViewMode] = useState("events"); // "events" or "tickets"
   const [events, setEvents] = useState({ upcoming: [], live: [], past: [] });
+  const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,11 +33,50 @@ export default function EventLibrary() {
         if (res.ok) {
           const data = await res.json();
           setEvents(data);
+          
+          // Fetch tickets for upcoming and live events
+          const allUpcomingEvents = [...(data.live || []), ...(data.upcoming || [])];
+          fetchTicketsForEvents(allUpcomingEvents);
         }
       } catch (error) {
         console.error("Failed to fetch events", error);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchTicketsForEvents = async (eventsList) => {
+      try {
+        // Fetch user details to get registered events with ticket info
+        const userRes = await fetch(`${API_URL}/user/details`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_token: userId }),
+        });
+        
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          const registeredEvents = userData.registeredEvents || [];
+          
+          // Match tickets with events
+          const ticketsWithEvents = [];
+          eventsList.forEach(event => {
+            const registration = registeredEvents.find(reg => reg.event_id === event.event_id);
+            if (registration && registration.participants) {
+              registration.participants.forEach(participant => {
+                ticketsWithEvents.push({
+                  ...participant,
+                  event: event,
+                  eventId: event.event_id
+                });
+              });
+            }
+          });
+          
+          setTickets(ticketsWithEvents);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tickets", error);
       }
     };
 
@@ -84,28 +126,58 @@ export default function EventLibrary() {
             </p>
           </div>
 
-          {/* Tabs */}
-          <div className="flex bg-gray-100 rounded-xl p-1 shadow-inner border border-gray-200">
-            <button
-              onClick={() => setActiveTab("upcoming")}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                activeTab === "upcoming"
-                  ? "bg-[color:var(--secondary-color)] text-white shadow-md"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              Upcoming & Live
-            </button>
-            <button
-              onClick={() => setActiveTab("past")}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                activeTab === "past"
-                  ? "bg-[color:var(--secondary-color)] text-white shadow-md"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              Past Events
-            </button>
+          {/* Tabs and View Toggle */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex bg-gray-100 rounded-xl p-1 shadow-inner border border-gray-200">
+              <button
+                onClick={() => setActiveTab("upcoming")}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === "upcoming"
+                    ? "bg-[color:var(--secondary-color)] text-white shadow-md"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Upcoming & Live
+              </button>
+              <button
+                onClick={() => setActiveTab("past")}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === "past"
+                    ? "bg-[color:var(--secondary-color)] text-white shadow-md"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Past Events
+              </button>
+            </div>
+
+            {/* View Mode Toggle - Only show for upcoming/live */}
+            {activeTab === "upcoming" && (
+              <div className="flex bg-gray-100 rounded-xl p-1 shadow-inner border border-gray-200">
+                <button
+                  onClick={() => setViewMode("events")}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
+                    viewMode === "events"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <FiGrid className="text-base" />
+                  Events
+                </button>
+                <button
+                  onClick={() => setViewMode("tickets")}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
+                    viewMode === "tickets"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <FiCreditCard className="text-base" />
+                  Tickets ({tickets.length})
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -116,7 +188,42 @@ export default function EventLibrary() {
         ) : (
           <div className="animate-fade-in">
             {activeTab === "upcoming" ? (
-              <div className="space-y-12">
+              viewMode === "tickets" ? (
+                /* Tickets View */
+                <section>
+                  <div className="flex items-center gap-3 mb-6">
+                    <FiCreditCard className="text-xl text-[color:var(--secondary-color)]" />
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Your Tickets
+                    </h2>
+                  </div>
+                  {tickets.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {tickets.map((ticket, index) => (
+                        <TicketCard
+                          key={`${ticket.eventId}-${index}`}
+                          ticket={ticket}
+                          event={ticket.event}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-gray-50 rounded-2xl">
+                      <FiCreditCard className="text-5xl text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">No Tickets Yet</h3>
+                      <p className="text-gray-500 mb-6">Register for events to get your tickets here</p>
+                      <button
+                        onClick={() => router.push("/users/dashboard")}
+                        className="px-6 py-2.5 bg-[color:var(--primary-color)] text-white font-bold rounded-full hover:shadow-lg transition-all"
+                      >
+                        Explore Events
+                      </button>
+                    </div>
+                  )}
+                </section>
+              ) : (
+                /* Events View */
+                <div className="space-y-12">
                 {/* Live Events Section */}
                 {events.live && events.live.length > 0 && (
                   <section>
@@ -181,6 +288,7 @@ export default function EventLibrary() {
                   )}
                 </section>
               </div>
+              )
             ) : (
               /* Past Events Tab */
               <section>
