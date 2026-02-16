@@ -1,5 +1,6 @@
 import UserNavBar from "@/components/UserNavBar";
 import BackButton from "@/components/BackButton";
+import InstallAppButton from "@/components/InstallAppButton";
 import { getUserToken } from "@/utils/getUserToken";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
@@ -358,6 +359,14 @@ export default function UserSettings() {
                     {/* Preferences Tab */}
                     {activeTab === "preferences" && (
                         <div className="space-y-6 animate-fade-in">
+                        
+                        {/* Install App Button */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">App Installation</h3>
+                            <InstallAppButton variant="button" />
+                        </div>
+
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Privacy Settings</h3>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                             <div>

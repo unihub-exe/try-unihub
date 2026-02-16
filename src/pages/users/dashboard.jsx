@@ -2,6 +2,7 @@ import Dashboard_Filter from "@/components/Dashboard_Filter";
 import UserNavBar from "@/components/UserNavBar";
 import OnboardingGuide from "@/components/OnboardingGuide";
 import EventCard from "@/components/EventCard";
+import InstallAppButton from "@/components/InstallAppButton";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -384,6 +385,9 @@ function UserDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* PWA Install Banner */}
+      <InstallAppButton variant="banner" />
     </div>
   );
 }
