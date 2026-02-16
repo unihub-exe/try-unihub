@@ -494,7 +494,7 @@ export default function WalletPage() {
                                                                 <div>
                                                                     <div className="font-bold text-gray-900">{t.description}</div>
                                                                     <div className="text-sm text-gray-500">
-                                                                        {t.eventId ? `Event: ${t.eventId}` : t.paymentReference || ""}
+                                                                        {formatDate(t.createdAt)}
                                                                     </div>
                                                                 </div>
                                                             </div>

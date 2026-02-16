@@ -32,6 +32,10 @@ router.route("/announcements")
 router.route("/stats").get(authenticate, requireRole("ADMIN"), getSystemStats);
 router.route("/testimonials").get(authenticate, requireRole("ADMIN"), getTestimonials);
 
+// Public endpoints for landing page (no auth required)
+router.route("/public/stats").get(getSystemStats);
+router.route("/public/testimonials").get(getTestimonials);
+
 // Settings routes
 router.route("/settings")
     .get(authenticate, requireRole("ADMIN"), getSettings)

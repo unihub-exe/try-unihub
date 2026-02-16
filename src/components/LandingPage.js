@@ -57,9 +57,9 @@ function LandingPage() {
     try {
       const response = await fetch(`${base}/event/getallevents`);
 
-      // Try to fetch stats, but don't fail if unauthorized
+      // Fetch public stats
       try {
-        const statsRes = await fetch(`${base}/admin/stats`);
+        const statsRes = await fetch(`${base}/admin/public/stats`);
         if (statsRes.ok) {
           const data = await statsRes.json();
           setStats({
@@ -69,19 +69,17 @@ function LandingPage() {
           });
         }
       } catch (statsError) {
-        // Silently handle stats fetch error
         console.log("Stats not available");
       }
 
-      // Try to fetch testimonials, but don't fail if unauthorized
+      // Fetch public testimonials
       try {
-        const testRes = await fetch(`${base}/admin/testimonials`);
+        const testRes = await fetch(`${base}/admin/public/testimonials`);
         if (testRes.ok) {
           const data = await testRes.json();
           setTestimonials(data);
         }
       } catch (testError) {
-        // Silently handle testimonials fetch error
         console.log("Testimonials not available");
       }
 
