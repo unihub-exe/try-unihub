@@ -97,3 +97,29 @@
 ## Deployment Notes
 
 All fixes are backward compatible and require no database migrations. Simply deploy the updated code.
+
+---
+
+## Issue 4: QR Scanner 404 Error ✅ FIXED
+
+**Problem**: Clicking "Open QR Scanner" in the check-in section resulted in a 404 error.
+
+**Root Cause**: The `/event/[eventId]/scan` page didn't exist.
+
+**Solution**:
+- Created new QR scanner page at `src/pages/event/[eventId]/scan.jsx`
+- Features:
+  - Manual ticket code entry (fully functional)
+  - Camera QR scanner placeholder (coming soon)
+  - Real-time check-in statistics
+  - Recent check-ins display
+  - Integration with existing `/event/checkin` backend endpoint
+
+**Files Created**:
+- `src/pages/event/[eventId]/scan.jsx`
+
+**Usage**:
+1. Go to event management page
+2. Click "Check-in" tab
+3. Click "Open QR Scanner"
+4. Use manual entry to check in attendees by entering their ticket code or participant ID
