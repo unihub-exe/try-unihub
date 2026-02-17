@@ -170,8 +170,6 @@ function UserDashboard() {
     return "Good Evening";
   };
 
-  const premiumEvents = allEvents.filter(e => e.isPremium);
-
   const now = new Date();
 
   // Helper function to parse event date and time
@@ -199,6 +197,25 @@ function UserDashboard() {
     
     return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], hours, minutes);
   };
+
+  // Filter premium events - exclude past events
+  const premiumEvents = allEvents.filter(e => {
+    if (!e.isPremium) return false;
+    
+    const eventStart = parseEventDateTime(e.date, e.time);
+    if (!eventStart) return true; // Include if we can't parse date
+    
+    let eventEnd;
+    if (e.endDate && e.endTime) {
+      eventEnd = parseEventDateTime(e.endDate, e.endTime, true);
+    } else {
+      // If no end time, assume event lasts 3 hours
+      eventEnd = new Date(eventStart.getTime() + 3 * 60 * 60 * 1000);
+    }
+    
+    // Only show premium events that haven't ended yet
+    return now <= eventEnd;
+  });
 
   // Categorize events based on actual start and end times
   const liveEvents = filteredEvents.filter(e => {
