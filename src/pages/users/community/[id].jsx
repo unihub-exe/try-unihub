@@ -213,10 +213,10 @@ export default function CommunityChat() {
                     content,
                     image: postImage,
                     communityId,
-                    authorId: user.user_token || user._id, 
+                    authorId: user._id, // FIXED: Always use _id for consistency
                     authorType: user.role === 'ADMIN' ? 'Admin' : 'User',
                     authorName: user.displayName || user.username || user.name,
-                    authorAvatar: user.avatar || null // Include avatar
+                    authorAvatar: user.avatar || null
                 })
             });
 
@@ -366,24 +366,24 @@ export default function CommunityChat() {
     const reversedPosts = posts.slice().reverse();
 
     return (
-        <div className="h-screen flex flex-col font-sans bg-gradient-to-b from-[#f5f7fa] to-[#e8ecf1] overflow-hidden">
+        <div className="h-screen flex flex-col font-sans bg-[#f0f2f5] overflow-hidden">
             {/* ===== HEADER (Modern Design) ===== */}
-            <div className="bg-white px-3 md:px-5 py-3 flex items-center justify-between z-40 flex-shrink-0 shadow-sm border-b border-gray-100">
-                <div className="flex items-center gap-3 min-w-0">
+            <div className="bg-white px-4 md:px-5 py-3.5 flex items-center justify-between z-40 flex-shrink-0 shadow-sm">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                     <button 
                         onClick={() => router.push("/users/community")} 
                         className="p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-all flex-shrink-0"
                     >
                         <FiArrowLeft className="text-xl" />
                     </button>
-                    <div className="h-11 w-11 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 overflow-hidden flex-shrink-0 shadow-md">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 overflow-hidden flex-shrink-0 shadow-sm">
                         {community.profileImage ? (
                             <img src={community.profileImage} className="h-full w-full object-cover" alt="" />
                         ) : (
-                            <div className="h-full w-full flex items-center justify-center text-xl">🏛️</div>
+                            <div className="h-full w-full flex items-center justify-center text-white text-lg">🏛️</div>
                         )}
                     </div>
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex flex-col min-w-0 flex-1">
                         <h1 className="text-gray-900 text-base font-semibold leading-tight truncate">{community.name}</h1>
                         <span className="text-gray-500 text-xs truncate">
                             {community.members?.length || 0} members
@@ -391,11 +391,11 @@ export default function CommunityChat() {
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                     {!isMember ? (
                         <button 
                             onClick={() => setShowRules(true)}
-                            className="px-5 py-2 bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white text-sm font-medium rounded-full hover:shadow-lg transition-all"
+                            className="px-5 py-2 bg-[#0084ff] text-white text-sm font-medium rounded-full hover:bg-[#0073e6] transition-all shadow-sm"
                         >
                             Join
                         </button>
@@ -444,82 +444,90 @@ export default function CommunityChat() {
             {/* ===== CHAT AREA ===== */}
             <div 
                 ref={chatContainerRef}
-                className="flex-1 overflow-y-auto px-4 md:px-[8%] lg:px-[15%] py-5"
-                style={{
-                    backgroundColor: "#f5f7fa",
-                }}
+                className="flex-1 overflow-y-auto px-4 md:px-[10%] lg:px-[18%] py-4"
+                style={{ backgroundColor: "#f0f2f5" }}
                 onClick={() => showMenu && setShowMenu(false)}
             >
                 {/* Community Welcome Banner */}
-                <div className="bg-white rounded-2xl p-5 mb-6 text-center shadow-sm mx-auto max-w-md border border-gray-100">
-                    <div className="h-16 w-16 mx-auto rounded-full bg-gradient-to-br from-purple-400 to-pink-400 overflow-hidden mb-3 flex items-center justify-center text-3xl shadow-md">
+                <div className="bg-white rounded-2xl p-5 mb-5 text-center shadow-sm mx-auto max-w-md">
+                    <div className="h-14 w-14 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-purple-500 overflow-hidden mb-3 flex items-center justify-center text-2xl shadow-sm">
                         {community.profileImage ? (
                             <img src={community.profileImage} className="h-full w-full object-cover" alt="" />
-                        ) : "🏛️"}
+                        ) : <span className="text-white">🏛️</span>}
                     </div>
-                    <h2 className="font-semibold text-gray-900 text-lg">{community.name}</h2>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">{community.description}</p>
-                    <div className="mt-3 flex items-center justify-center gap-1 text-gray-500 text-xs">
-                        <span>Community · {community.members?.length || 0} members</span>
+                    <h2 className="font-semibold text-gray-900 text-base">{community.name}</h2>
+                    <p className="text-gray-600 text-sm mt-1.5 leading-relaxed">{community.description}</p>
+                    <div className="mt-2 text-gray-500 text-xs">
+                        {community.members?.length || 0} members
                     </div>
                 </div>
 
                 {/* Messages */}
                 {reversedPosts.map((post, index) => {
-                    // CRITICAL FIX: Properly determine if message is from current user
-                    const postAuthorId = String(post.authorId || post.author || '');
-                    const currentUserId = String(user?._id || '');
-                    const isMe = currentUserId && postAuthorId === currentUserId;
+                    // BULLETPROOF: Determine if message is from current user
+                    const postAuthorId = String(post.authorId || post.author || '').trim();
+                    const currentUserId = String(user?._id || '').trim();
+                    const isMe = postAuthorId && currentUserId && postAuthorId === currentUserId;
+                    
+                    console.log('Message check:', { 
+                        postAuthorId, 
+                        currentUserId, 
+                        isMe,
+                        authorName: post.authorName 
+                    });
                     
                     const prevPost = index > 0 ? reversedPosts[index - 1] : null;
-                    const isSameAuthor = prevPost && (prevPost.authorId === post.authorId || prevPost.author === post.author);
+                    const prevAuthorId = prevPost ? String(prevPost.authorId || prevPost.author || '').trim() : null;
+                    const isSameAuthor = prevAuthorId && postAuthorId === prevAuthorId;
                     
-                    // Show username if different author from previous message OR if it's been more than 2 minutes
+                    // Show avatar/username if:
+                    // 1. Different author from previous message
+                    // 2. OR more than 5 minutes since last message
                     const timeDiff = prevPost ? new Date(post.createdAt) - new Date(prevPost.createdAt) : Infinity;
-                    const showAvatar = !isSameAuthor || timeDiff > 120000; // 2 minutes
+                    const showUserInfo = !isSameAuthor || timeDiff > 300000; // 5 minutes
 
                     // Date separator
                     const currentDate = new Date(post.createdAt).toDateString();
                     const prevDate = prevPost ? new Date(prevPost.createdAt).toDateString() : null;
                     const showDateSeparator = !prevPost || currentDate !== prevDate;
 
-                    // Get avatar URL - use actual avatar or fallback to generated
+                    // Get avatar URL
                     const getAvatarUrl = (authorAvatar, authorName) => {
                         if (authorAvatar) return authorAvatar;
-                        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${authorName || 'user'}`;
+                        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authorName || 'user')}`;
                     };
 
-                    // Safe avatar URLs with null checks
-                    const myAvatarUrl = user?.avatar || getAvatarUrl(null, user?.username || user?.displayName || 'me');
-                    const otherAvatarUrl = getAvatarUrl(post.authorAvatar, post.authorName);
+                    const avatarUrl = isMe 
+                        ? (user?.avatar || getAvatarUrl(null, user?.username || user?.displayName || 'You'))
+                        : getAvatarUrl(post.authorAvatar, post.authorName);
 
                     return (
                         <React.Fragment key={post._id}>
                             {/* Date Separator */}
                             {showDateSeparator && (
                                 <div className="flex justify-center my-6">
-                                    <span className="bg-white/90 backdrop-blur-sm text-[#54656f] text-xs font-medium px-4 py-1.5 rounded-full shadow-sm">
+                                    <span className="bg-white/90 backdrop-blur-sm text-gray-600 text-xs font-medium px-4 py-1.5 rounded-full shadow-sm">
                                         {formatDateSeparator(post.createdAt)}
                                     </span>
                                 </div>
                             )}
 
-                            {/* Message Container */}
-                            <div className={`flex w-full gap-2.5 mb-1 group ${isMe ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}>
-                                {/* Left side: Avatar for others */}
+                            {/* Message Row */}
+                            <div className={`flex w-full gap-2 mb-1 group ${isMe ? 'justify-end' : 'justify-start'} ${showUserInfo ? 'mt-4' : 'mt-0.5'}`}>
+                                {/* Avatar (only for others, only when showing user info) */}
                                 {!isMe && (
-                                    <div className={`flex-shrink-0 self-end ${showAvatar ? 'visible' : 'invisible'}`}>
+                                    <div className={`flex-shrink-0 self-end w-8 ${showUserInfo ? 'visible' : 'invisible'}`}>
                                         <div 
-                                            className="h-9 w-9 rounded-full overflow-hidden shadow-sm border-2 border-white cursor-pointer hover:scale-110 transition-transform"
+                                            className="h-8 w-8 rounded-full overflow-hidden shadow-sm border-2 border-white cursor-pointer hover:scale-110 transition-transform"
                                             style={{ backgroundColor: getNameColor(post.authorName || 'user') + '20' }}
                                             onClick={() => isAdmin && handleUserClick(post)}
                                         >
                                             <img 
-                                                src={otherAvatarUrl} 
+                                                src={avatarUrl} 
                                                 alt={post.authorName || 'User'}
                                                 className="h-full w-full object-cover"
                                                 onError={(e) => {
-                                                    e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName || 'user'}`;
+                                                    e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=fallback`;
                                                 }}
                                             />
                                         </div>
@@ -527,79 +535,75 @@ export default function CommunityChat() {
                                 )}
 
                                 {/* Message Content */}
-                                <div className={`relative max-w-[70%] md:max-w-[55%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                    {/* Username (Only for others when showing avatar) */}
-                                    {!isMe && showAvatar && (
-                                        <div className="flex items-center gap-2 mb-1 px-1">
+                                <div className={`flex flex-col max-w-[70%] md:max-w-[60%] ${isMe ? 'items-end' : 'items-start'}`}>
+                                    {/* Username (only for others, only when showing user info) */}
+                                    {!isMe && showUserInfo && (
+                                        <div className="flex items-center gap-1.5 mb-1 px-2">
                                             <span 
                                                 className="text-xs font-semibold cursor-pointer hover:underline"
                                                 style={{ color: getNameColor(post.authorName || 'user') }}
                                                 onClick={() => isAdmin && handleUserClick(post)}
                                             >
-                                                {post.authorName || 'Unknown User'}
+                                                {post.authorName || 'Unknown'}
                                             </span>
                                             {post.authorType === 'Admin' && (
-                                                <BsShieldFillCheck className="text-[#00a884] text-xs" title="Admin" />
+                                                <BsShieldFillCheck className="text-[#00a884] text-xs" />
                                             )}
                                         </div>
                                     )}
 
                                     {/* Message Bubble */}
                                     <div 
-                                        className={`relative px-3.5 py-2 text-[15px] leading-[21px] shadow-sm transition-all ${
+                                        className={`relative px-3 py-2 text-[15px] leading-[20px] shadow-sm ${
                                             isMe 
-                                            ? 'bg-[#0084ff] text-white rounded-[20px] rounded-br-[4px]' 
-                                            : 'bg-white text-[#111b21] rounded-[20px] rounded-tl-[4px]'
-                                        } ${isAdmin && !isMe ? 'cursor-pointer hover:shadow-md' : ''}`}
-                                        onContextMenu={(e) => {
-                                            e.preventDefault();
-                                            if (isAdmin && !isMe) handleUserClick(post);
-                                        }}
+                                            ? 'bg-[#0084ff] text-white rounded-[18px] rounded-br-[4px]' 
+                                            : 'bg-white text-gray-900 rounded-[18px] rounded-tl-[4px] border border-gray-100'
+                                        }`}
                                     >
-                                        {/* Pinned Indicator */}
+                                        {/* Pinned Badge */}
                                         {post.isPinned && (
-                                            <div className={`text-[10px] font-bold mb-1.5 flex items-center gap-1 uppercase tracking-wide ${isMe ? 'text-blue-100' : 'text-[#00a884]'}`}>
-                                                <BsPinAngleFill size={9} /> Pinned
+                                            <div className={`text-[10px] font-bold mb-1 flex items-center gap-1 ${isMe ? 'text-blue-100' : 'text-[#00a884]'}`}>
+                                                <BsPinAngleFill size={9} /> PINNED
                                             </div>
                                         )}
 
                                         {/* Image */}
                                         {post.image && (
-                                            <div className="mb-2 rounded-2xl overflow-hidden -mx-1 -mt-1">
-                                                <img src={post.image} alt="attachment" className="max-w-full max-h-[300px] object-cover rounded-2xl" />
+                                            <div className="mb-2 rounded-xl overflow-hidden -mx-1 -mt-1">
+                                                <img src={post.image} alt="" className="max-w-full max-h-[280px] object-cover" />
                                             </div>
                                         )}
 
-                                        {/* Content */}
+                                        {/* Text Content */}
                                         <div className="whitespace-pre-wrap break-words">
                                             {post.content}
                                         </div>
 
                                         {/* Timestamp */}
-                                        <div className={`text-[11px] mt-1 flex items-center gap-1 ${
-                                            isMe ? 'justify-end text-white/70' : 'justify-end text-[#667781]'
+                                        <div className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${
+                                            isMe ? 'text-white/70' : 'text-gray-500'
                                         }`}>
                                             <span>{formatTime(post.createdAt)}</span>
-                                            {isMe && <BsCheck2All className="text-white/80 text-sm" />}
+                                            {isMe && <BsCheck2All className="text-sm" />}
                                         </div>
                                     </div>
 
-                                    {/* Admin Actions (Hover) */}
+                                    {/* Admin Actions */}
                                     {isAdmin && (
-                                        <div className={`absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                        <div className={`absolute top-0 ${isMe ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
                                             <button 
                                                 onClick={() => handlePinPost(post._id)} 
-                                                className="p-1.5 bg-white rounded-full shadow-md text-[#54656f] hover:text-[#00a884] hover:scale-110 transition-all" 
+                                                className="p-1.5 bg-white rounded-full shadow-md text-gray-600 hover:text-[#00a884] hover:scale-110 transition-all" 
                                                 title="Pin"
                                             >
-                                                <BsPinAngleFill size={12} />
+                                                <BsPinAngleFill size={11} />
                                             </button>
                                             <button 
                                                 onClick={() => setDeleteModal({ type: 'post', postId: post._id })} 
-                                                className="p-1.5 bg-white rounded-full shadow-md text-[#54656f] hover:text-red-500 hover:scale-110 transition-all" 
+                                                className="p-1.5 bg-white rounded-full shadow-md text-gray-600 hover:text-red-500 hover:scale-110 transition-all" 
                                                 title="Delete"
                                             >
-                                                <FiTrash2 size={12} />
+                                                <FiTrash2 size={11} />
                                             </button>
                                         </div>
                                     )}
@@ -613,36 +617,36 @@ export default function CommunityChat() {
 
             {/* ===== INPUT AREA ===== */}
             {isMember ? (
-                <div className="bg-white px-4 md:px-6 py-4 flex-shrink-0 border-t border-gray-100">
+                <div className="bg-white px-4 md:px-6 py-3 flex-shrink-0 border-t border-gray-200">
                     <div className="max-w-4xl mx-auto w-full">
                         {/* Image Preview */}
                         {postImage && (
-                            <div className="relative mb-3 inline-block bg-gray-50 rounded-xl p-2 shadow-sm">
-                                <img src={postImage} alt="Preview" className="h-24 rounded-lg object-cover" />
+                            <div className="relative mb-2 inline-block bg-gray-50 rounded-xl p-2">
+                                <img src={postImage} alt="Preview" className="h-20 rounded-lg object-cover" />
                                 <button 
                                     onClick={() => setPostImage("")} 
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-colors"
+                                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
                                 >
-                                    <FiTrash2 size={12} />
+                                    <FiTrash2 size={10} />
                                 </button>
                             </div>
                         )}
                         
-                        <form onSubmit={handlePost} className="flex items-end gap-3">
+                        <form onSubmit={handlePost} className="flex items-center gap-2">
                             {/* Attachment Button */}
-                            <label className="p-2.5 text-gray-500 hover:text-[#0084ff] cursor-pointer transition-colors flex-shrink-0 rounded-full hover:bg-gray-100">
-                                <FiImage size={22} />
+                            <label className="p-2 text-gray-500 hover:text-[#0084ff] cursor-pointer transition-colors flex-shrink-0 rounded-full hover:bg-gray-100">
+                                <FiImage size={20} />
                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0])} />
                             </label>
 
                             {/* Message Input */}
-                            <div className="flex-1 bg-gray-50 rounded-[24px] flex items-end min-h-[48px] border border-gray-200 focus-within:border-[#0084ff] transition-colors">
+                            <div className="flex-1 bg-gray-100 rounded-full flex items-center px-4 py-1 min-h-[40px]">
                                 <textarea
                                     ref={textareaRef}
                                     value={content}
                                     onChange={handleTextareaChange}
                                     placeholder="Type a message..."
-                                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-400 py-3 px-5 max-h-[120px] min-h-[48px] resize-none text-[15px] leading-[22px]"
+                                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 py-2 max-h-[100px] resize-none text-[15px] leading-[20px]"
                                     rows="1"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -652,10 +656,10 @@ export default function CommunityChat() {
                                     }}
                                 />
                                 <button 
-                                    className="p-2.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors flex-shrink-0 mr-2"
+                                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                                     type="button"
                                 >
-                                    <FiSmile size={20} />
+                                    <FiSmile size={18} />
                                 </button>
                             </div>
 
@@ -663,26 +667,26 @@ export default function CommunityChat() {
                             <button 
                                 type="submit"
                                 disabled={(!content.trim() && !postImage) || isUploading}
-                                className={`p-3 rounded-full transition-all flex-shrink-0 shadow-md ${
+                                className={`p-2.5 rounded-full transition-all flex-shrink-0 ${
                                     (!content.trim() && !postImage) 
                                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                                    : 'bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white hover:shadow-lg hover:scale-105'
+                                    : 'bg-[#0084ff] text-white hover:bg-[#0073e6] shadow-sm'
                                 }`}
                             >
                                 {isUploading ? (
                                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
                                 ) : (
-                                    <FiSend size={18} />
+                                    <FiSend size={16} />
                                 )}
                             </button>
                         </form>
                     </div>
                 </div>
             ) : (
-                <div className="bg-white border-t border-gray-100 p-5 pb-6 text-center flex-shrink-0">
+                <div className="bg-white border-t border-gray-200 p-4 text-center flex-shrink-0">
                     <button 
                         onClick={() => setShowRules(true)} 
-                        className="w-full max-w-md bg-gradient-to-r from-[#0084ff] to-[#0066cc] text-white font-medium py-3.5 rounded-full hover:shadow-lg transition-all active:scale-[0.98]"
+                        className="w-full max-w-md bg-[#0084ff] text-white font-medium py-3 rounded-full hover:bg-[#0073e6] transition-all shadow-sm"
                     >
                         Join Community to Chat
                     </button>
