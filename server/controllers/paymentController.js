@@ -34,51 +34,36 @@ const verifyPaystackPayment = async(reference) => {
         
         console.log("Verifying Paystack transaction with reference:", refString);
         
-        // Wrap in try-catch to handle Paystack library errors
-        let response;
+        // Use direct API call instead of Paystack library to avoid crashes
+        const axios = require('axios');
         try {
-            response = await paystack.transaction.verify({ reference: refString });
-        } catch (paystackError) {
-            // Handle Paystack library internal errors (like undefined body.status)
-            console.error("Paystack library error:", paystackError.message);
-            
-            // Try direct API call as fallback
-            const axios = require('axios');
-            try {
-                const apiResponse = await axios.get(
-                    `https://api.paystack.co/transaction/verify/${refString}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-                        }
-                    }
-                );
-                
-                if (apiResponse.data && apiResponse.data.status && apiResponse.data.data) {
-                    console.log("Paystack verification successful (via direct API)");
-                    return apiResponse.data.data;
+            const apiResponse = await axios.get(
+                `https://api.paystack.co/transaction/verify/${refString}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 30000 // 30 second timeout
                 }
-            } catch (apiError) {
-                console.error("Direct API verification also failed:", apiError.message);
-            }
+            );
             
+            if (apiResponse.data && apiResponse.data.status && apiResponse.data.data) {
+                console.log("Paystack verification successful");
+                return apiResponse.data.data;
+            } else {
+                console.error("Paystack verification: Invalid response structure", apiResponse.data);
+                return null;
+            }
+        } catch (apiError) {
+            console.error("Paystack API verification failed:", apiError.message);
+            if (apiError.response) {
+                console.error("Paystack API error response:", apiError.response.data);
+            }
             return null;
         }
-        
-        // Check if response and data exist
-        if (response && response.data) {
-            console.log("Paystack verification successful");
-            return response.data;
-        }
-        console.error("Paystack verification: Invalid response structure", response);
-        return null;
     } catch (error) {
         console.error("Paystack verification error:", error.message || error);
-        // Log more details for debugging
-        if (error.response) {
-            console.error("Paystack error response:", error.response);
-        }
-        // Return null instead of throwing to prevent crashes
         return null;
     }
 };
