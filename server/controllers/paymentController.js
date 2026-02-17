@@ -550,8 +550,17 @@ const initializePaystackPayment = async(req, res) => {
             purpose: "wallet_funding"
         };
 
+        // Check if this is a premium upgrade
+        if (metadata && metadata.purpose === "premium_upgrade") {
+            purpose = "premium_upgrade";
+            paystackMetadata.purpose = "premium_upgrade";
+            paystackMetadata.event_id = metadata.event_id;
+            paystackMetadata.days = metadata.days;
+            paystackMetadata.event_name = metadata.event_name || "";
+            callbackUrl = `${process.env.CLIENT_URL || "http://localhost:3000"}/event/${metadata.event_id}/premium_payment?status=success&reference=${reference}`;
+        }
         // Check if this is a ticket purchase
-        if (metadata && metadata.event_id) {
+        else if (metadata && metadata.event_id) {
             purpose = "ticket_purchase";
             paystackMetadata.purpose = "ticket_purchase";
             paystackMetadata.event_id = metadata.event_id;
