@@ -408,8 +408,15 @@ const getUserEvents = async(req, res) => {
                 eventEnd = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0], endHours, endMinutes);
             } else {
                 // If no end time, assume event lasts 3 hours
-                eventEnd.setHours(eventEnd.getHours() + 3);
+                eventEnd = new Date(eventStart.getTime() + 3 * 60 * 60 * 1000);
             }
+            
+            // Debug logging
+            console.log(`Event: ${event.name}`);
+            console.log(`  Start: ${eventStart.toISOString()}`);
+            console.log(`  End: ${eventEnd.toISOString()}`);
+            console.log(`  Now: ${now.toISOString()}`);
+            console.log(`  Category: ${now < eventStart ? 'upcoming' : now <= eventEnd ? 'live' : 'past'}`);
             
             // Categorize based on current time
             if (now < eventStart) {
@@ -423,6 +430,7 @@ const getUserEvents = async(req, res) => {
                 // Show past events if user was a participant (registered) OR is the owner
                 const isParticipant = event.participants && event.participants.some(p => p.id === userId);
                 const isOwner = event.ownerId === userId;
+                console.log(`  Is Participant: ${isParticipant}, Is Owner: ${isOwner}`);
                 if (isParticipant || isOwner) {
                     past.push(event);
                 }
