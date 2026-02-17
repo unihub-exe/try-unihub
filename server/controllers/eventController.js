@@ -340,7 +340,7 @@ const allEvents = async(req, res) => {
     }
 };
 
-const getUserEvents = async(req, res) => {
+getUserEvents = async(req, res) => {
     const userId = req.body.user_token || req.body.user_id;
     if (!userId) return res.status(400).send({ msg: "User ID required" });
 
@@ -354,6 +354,7 @@ const getUserEvents = async(req, res) => {
             cancelled: { $ne: true }
         }).sort({ date: 1 });
 
+        // Get current time in UTC
         const now = new Date();
 
         const upcoming = [];
@@ -362,15 +363,15 @@ const getUserEvents = async(req, res) => {
 
         events.forEach(event => {
             if (!event.date || !event.time) return;
-            
+
             // Parse date (DD/MM/YYYY)
             const dateParts = event.date.split('/');
             if (dateParts.length !== 3) return;
-            
+
             // Parse time (e.g., "3:00 PM" or "15:00")
             const timeStr = event.time.trim();
             let hours = 0, minutes = 0;
-            
+
             // Handle 12-hour format (3:00 PM)
             if (timeStr.includes('AM') || timeStr.includes('PM')) {
                 const [time, period] = timeStr.split(' ');
@@ -383,17 +384,17 @@ const getUserEvents = async(req, res) => {
                 hours = h;
                 minutes = m || 0;
             }
-            
-            // Create event start datetime
-            const eventStart = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], hours, minutes);
-            
+
+            // Create event start datetime in UTC (subtract 1 hour since events are in WAT which is UTC+1)
+            const eventStartUTC = new Date(Date.UTC(dateParts[2], dateParts[1] - 1, dateParts[0], hours - 1, minutes));
+
             // Create event end datetime
-            let eventEnd = new Date(eventStart);
+            let eventEndUTC;
             if (event.endDate && event.endTime) {
                 const endDateParts = event.endDate.split('/');
                 const endTimeStr = event.endTime.trim();
                 let endHours = 0, endMinutes = 0;
-                
+
                 if (endTimeStr.includes('AM') || endTimeStr.includes('PM')) {
                     const [time, period] = endTimeStr.split(' ');
                     const [h, m] = time.split(':').map(Number);
@@ -404,25 +405,25 @@ const getUserEvents = async(req, res) => {
                     endHours = h;
                     endMinutes = m || 0;
                 }
-                
-                eventEnd = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0], endHours, endMinutes);
+
+                eventEndUTC = new Date(Date.UTC(endDateParts[2], endDateParts[1] - 1, endDateParts[0], endHours - 1, endMinutes));
             } else {
                 // If no end time, assume event lasts 3 hours
-                eventEnd = new Date(eventStart.getTime() + 3 * 60 * 60 * 1000);
+                eventEndUTC = new Date(eventStartUTC.getTime() + 3 * 60 * 60 * 1000);
             }
-            
+
             // Debug logging
             console.log(`Event: ${event.name}`);
-            console.log(`  Start: ${eventStart.toISOString()}`);
-            console.log(`  End: ${eventEnd.toISOString()}`);
-            console.log(`  Now: ${now.toISOString()}`);
-            console.log(`  Category: ${now < eventStart ? 'upcoming' : now <= eventEnd ? 'live' : 'past'}`);
-            
+            console.log(`  Start (UTC): ${eventStartUTC.toISOString()}`);
+            console.log(`  End (UTC): ${eventEndUTC.toISOString()}`);
+            console.log(`  Now (UTC): ${now.toISOString()}`);
+            console.log(`  Category: ${now < eventStartUTC ? 'upcoming' : now <= eventEndUTC ? 'live' : 'past'}`);
+
             // Categorize based on current time
-            if (now < eventStart) {
+            if (now < eventStartUTC) {
                 // Event hasn't started yet
                 upcoming.push(event);
-            } else if (now >= eventStart && now <= eventEnd) {
+            } else if (now >= eventStartUTC && now <= eventEndUTC) {
                 // Event is currently happening
                 live.push(event);
             } else {
@@ -442,7 +443,7 @@ const getUserEvents = async(req, res) => {
         console.error(err);
         res.status(500).send({ msg: "Error fetching user events" });
     }
-};
+}
 
 const particularEvent = async(req, res) => {
     const eventId = req.body.event_id;
