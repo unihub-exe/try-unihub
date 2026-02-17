@@ -172,11 +172,58 @@ function UserDashboard() {
 
   const premiumEvents = allEvents.filter(e => e.isPremium);
 
-  const today = new Date();
-  const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+  const now = new Date();
 
-  const liveEvents = filteredEvents.filter(e => e.date === todayStr);
-  const upcomingEvents = filteredEvents.filter(e => e.date !== todayStr);
+  // Helper function to parse event date and time
+  const parseEventDateTime = (dateStr, timeStr, isEndTime = false) => {
+    if (!dateStr || !timeStr) return null;
+    
+    const dateParts = dateStr.split('/');
+    if (dateParts.length !== 3) return null;
+    
+    const timeStrTrimmed = timeStr.trim();
+    let hours = 0, minutes = 0;
+    
+    // Handle 12-hour format (3:00 PM)
+    if (timeStrTrimmed.includes('AM') || timeStrTrimmed.includes('PM')) {
+      const [time, period] = timeStrTrimmed.split(' ');
+      const [h, m] = time.split(':').map(Number);
+      hours = period === 'PM' && h !== 12 ? h + 12 : (period === 'AM' && h === 12 ? 0 : h);
+      minutes = m || 0;
+    } else {
+      // Handle 24-hour format
+      const [h, m] = timeStrTrimmed.split(':').map(Number);
+      hours = h;
+      minutes = m || 0;
+    }
+    
+    return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], hours, minutes);
+  };
+
+  // Categorize events based on actual start and end times
+  const liveEvents = filteredEvents.filter(e => {
+    const eventStart = parseEventDateTime(e.date, e.time);
+    if (!eventStart) return false;
+    
+    let eventEnd;
+    if (e.endDate && e.endTime) {
+      eventEnd = parseEventDateTime(e.endDate, e.endTime, true);
+    } else {
+      // If no end time, assume event lasts 3 hours
+      eventEnd = new Date(eventStart.getTime() + 3 * 60 * 60 * 1000);
+    }
+    
+    // Event is live if current time is between start and end
+    return now >= eventStart && now <= eventEnd;
+  });
+
+  const upcomingEvents = filteredEvents.filter(e => {
+    const eventStart = parseEventDateTime(e.date, e.time);
+    if (!eventStart) return false;
+    
+    // Event is upcoming if it hasn't started yet
+    return now < eventStart;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32 md:pb-0 font-sans">

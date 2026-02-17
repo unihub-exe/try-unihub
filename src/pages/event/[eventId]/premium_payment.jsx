@@ -38,8 +38,8 @@ export default function PremiumPayment() {
             .catch(() => {});
         }
 
-        // Fetch premium pricing settings
-        fetch(`${API_URL}/admin/settings`)
+        // Fetch premium pricing settings from public endpoint
+        fetch(`${API_URL}/admin/public/settings`)
             .then(res => res.json())
             .then(data => {
                 if (data.premiumPricePerDay) {
@@ -47,7 +47,10 @@ export default function PremiumPayment() {
                     setTotalPrice(data.premiumPricePerDay * days);
                 }
             })
-            .catch(() => {});
+            .catch((err) => {
+                console.error("Failed to fetch settings:", err);
+                // Keep default value of 100
+            });
     }, []);
 
     useEffect(() => {

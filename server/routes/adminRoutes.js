@@ -41,6 +41,9 @@ router.route("/settings")
     .get(authenticate, requireRole("ADMIN"), getSettings)
     .post(authenticate, requireRole("ADMIN"), updateSettings);
 
+// Public settings endpoint (read-only, for premium pricing)
+router.route("/public/settings").get(getSettings);
+
 // Payout management routes
 router.route("/payouts").get(authenticate, requireRole("ADMIN"), getAllPayouts);
 router.route("/payout/approve").post(authenticate, requireRole("ADMIN"), approvePayout);
