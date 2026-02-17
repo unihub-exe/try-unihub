@@ -14,6 +14,7 @@ export default function PremiumPayment() {
     const [user, setUser] = useState(null);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const [email, setEmail] = useState("");
     const [days, setDays] = useState(7);
     const [maxDays, setMaxDays] = useState(30);
@@ -152,6 +153,9 @@ export default function PremiumPayment() {
 
     const verifyPremiumPayment = async (reference) => {
         setProcessing(true);
+        setError("");
+        setSuccess("");
+        
         try {
             const response = await fetch(`${API_URL}/wallet/verify`, {
                 method: "POST",
@@ -170,7 +174,7 @@ export default function PremiumPayment() {
                 sessionStorage.removeItem('premium_redirect');
                 
                 // Show success message
-                setMessage({ type: "success", text: "🎉 Congratulations! Your event is now Premium and will appear in Premium Picks!" });
+                setSuccess("🎉 Congratulations! Your event is now Premium and will appear in Premium Picks!");
                 
                 // Redirect to dashboard after 3 seconds
                 setTimeout(() => {
@@ -218,9 +222,16 @@ export default function PremiumPayment() {
                 <NavBar />
                 <div className="max-w-4xl mx-auto pt-24 px-4 pb-12">
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-600">
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-600 animate-fade-in-up">
                             <FiAlertCircle />
                             <span>{error}</span>
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-600 animate-fade-in-up">
+                            <FiCheck />
+                            <span>{success}</span>
                         </div>
                     )}
 
