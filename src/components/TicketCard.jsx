@@ -1,43 +1,43 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { FiDownload, FiMapPin, FiCalendar, FiClock, FiUser, FiCheck, FiX } from "react-icons/fi";
+import QRCode from 'qrcode';
 
 export default function TicketCard({ ticket, event }) {
     const [showQR, setShowQR] = useState(false);
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
     const ticketRef = useRef(null);
 
-    // Generate QR code data URL using canvas
-    const generateQRCode = (text) => {
-        // Simple QR code generation using a data URL
-        // In production, you'd use a proper QR library
-        const canvas = document.createElement('canvas');
-        const size = 200;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        
-        // White background
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, size, size);
-        
-        // Black border
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(0, 0, size, size);
-        
-        // Draw text (simplified - in production use proper QR encoding)
-        ctx.fillStyle = '#000000';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('QR CODE', size/2, size/2 - 20);
-        ctx.fillText(text.substring(0, 20), size/2, size/2);
-        ctx.fillText(text.substring(20, 40), size/2, size/2 + 20);
-        
-        return canvas.toDataURL();
-    };
+    // Generate proper QR code when component mounts or ticket changes
+    useEffect(() => {
+        const generateQR = async () => {
+            try {
+                const qrData = ticket.qrToken || ticket._id || 'TICKET';
+                const url = await QRCode.toDataURL(qrData, {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                });
+                setQrCodeUrl(url);
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+            }
+        };
+        generateQR();
+    }, [ticket]);
 
     const downloadTicket = async () => {
         try {
+            // Generate QR code for download
+            const qrData = ticket.qrToken || ticket._id || 'TICKET';
+            const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+                width: 400,
+                margin: 2
+            });
+
             // Create a printable ticket HTML
             const ticketHTML = `
                 <!DOCTYPE html>
@@ -46,8 +46,12 @@ export default function TicketCard({ ticket, event }) {
                     <meta charset="UTF-8">
                     <title>Ticket - ${event.name}</title>
                     <style>
+                        @media print {
+                            body { margin: 0; }
+                            .no-print { display: none; }
+                        }
                         body { 
-                            font-family: Arial, sans-serif; 
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
                             margin: 0; 
                             padding: 20px;
                             background: #f5f5f5;
@@ -63,18 +67,24 @@ export default function TicketCard({ ticket, event }) {
                         .ticket-header {
                             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                             color: white;
-                            padding: 30px;
+                            padding: 40px 30px;
                             text-align: center;
                         }
                         .ticket-body {
                             padding: 30px;
                         }
                         .qr-section {
-                            text-align: center;
-                            padding: 20px;
+                            text-center;
+                            padding: 30px;
                             background: #f9f9f9;
-                            border-radius: 10px;
+                            border-radius: 15px;
                             margin: 20px 0;
+                        }
+                        .qr-section img {
+                            display: block;
+                            margin: 0 auto;
+                            width: 250px;
+                            height: 250px;
                         }
                         .info-row {
                             display: flex;
@@ -83,44 +93,59 @@ export default function TicketCard({ ticket, event }) {
                             border-bottom: 1px solid #eee;
                         }
                         .label { color: #666; font-size: 14px; }
-                        .value { font-weight: bold; color: #333; }
-                        h1 { margin: 0 0 10px 0; font-size: 28px; }
-                        .ticket-id { font-size: 12px; opacity: 0.8; }
+                        .value { font-weight: 600; color: #333; text-align: right; }
+                        h1 { margin: 0 0 10px 0; font-size: 32px; font-weight: 700; }
+                        .ticket-id { font-size: 13px; opacity: 0.9; font-family: monospace; }
+                        .print-btn {
+                            display: block;
+                            width: 200px;
+                            margin: 20px auto;
+                            padding: 12px;
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                        }
+                        .print-btn:hover { background: #5568d3; }
                     </style>
                 </head>
                 <body>
                     <div class="ticket">
                         <div class="ticket-header">
                             <h1>${event.name}</h1>
-                            <div class="ticket-id">Ticket ID: ${ticket.ticketId || ticket._id}</div>
+                            <div class="ticket-id">Ticket ID: ${ticket.ticketId || ticket._id || 'N/A'}</div>
                         </div>
                         <div class="ticket-body">
                             <div class="qr-section">
-                                <img src="${generateQRCode(ticket.qrToken || ticket._id)}" alt="QR Code" style="width: 200px; height: 200px;">
-                                <p style="margin-top: 10px; font-size: 12px; color: #666;">Scan this code at the event entrance</p>
+                                <img src="${qrCodeDataUrl}" alt="QR Code">
+                                <p style="margin-top: 15px; font-size: 14px; color: #666; font-weight: 500;">Scan this code at the event entrance</p>
                             </div>
                             <div class="info-row">
-                                <span class="label">Date</span>
+                                <span class="label">📅 Date</span>
                                 <span class="value">${event.date}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">Time</span>
+                                <span class="label">🕐 Time</span>
                                 <span class="value">${event.time}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">Venue</span>
+                                <span class="label">📍 Venue</span>
                                 <span class="value">${event.venue}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">Ticket Type</span>
+                                <span class="label">🎫 Ticket Type</span>
                                 <span class="value">${ticket.ticketType || 'General Admission'}</span>
                             </div>
                             <div class="info-row">
-                                <span class="label">Attendee</span>
-                                <span class="value">${ticket.attendeeName || 'Guest'}</span>
+                                <span class="label">👤 Attendee</span>
+                                <span class="value">${ticket.attendeeName || ticket.name || 'Guest'}</span>
                             </div>
                         </div>
                     </div>
+                    <button class="print-btn no-print" onclick="window.print()">🖨️ Print Ticket</button>
                 </body>
                 </html>
             `;
@@ -207,14 +232,20 @@ export default function TicketCard({ ticket, event }) {
                 {/* QR Code Section */}
                 {showQR ? (
                     <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center">
-                        <div className="bg-white p-4 rounded-lg inline-block">
-                            <img 
-                                src={generateQRCode(ticket.qrToken || ticket._id || 'TICKET')} 
-                                alt="Ticket QR Code"
-                                className="w-48 h-48 mx-auto"
-                            />
+                        <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
+                            {qrCodeUrl ? (
+                                <img 
+                                    src={qrCodeUrl} 
+                                    alt="Ticket QR Code"
+                                    className="w-56 h-56 mx-auto"
+                                />
+                            ) : (
+                                <div className="w-56 h-56 flex items-center justify-center">
+                                    <div className="animate-spin h-8 w-8 border-4 border-[color:var(--secondary-color)] border-t-transparent rounded-full"></div>
+                                </div>
+                            )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-3">Show this QR code at the event entrance</p>
+                        <p className="text-xs text-gray-500 mt-3 font-medium">Show this QR code at the event entrance</p>
                         <button
                             onClick={() => setShowQR(false)}
                             className="mt-3 text-sm text-[color:var(--secondary-color)] font-semibold hover:underline"
