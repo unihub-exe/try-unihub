@@ -34,7 +34,37 @@ const verifyPaystackPayment = async(reference) => {
         
         console.log("Verifying Paystack transaction with reference:", refString);
         
-        const response = await paystack.transaction.verify({ reference: refString });
+        // Wrap in try-catch to handle Paystack library errors
+        let response;
+        try {
+            response = await paystack.transaction.verify({ reference: refString });
+        } catch (paystackError) {
+            // Handle Paystack library internal errors (like undefined body.status)
+            console.error("Paystack library error:", paystackError.message);
+            
+            // Try direct API call as fallback
+            const axios = require('axios');
+            try {
+                const apiResponse = await axios.get(
+                    `https://api.paystack.co/transaction/verify/${refString}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+                        }
+                    }
+                );
+                
+                if (apiResponse.data && apiResponse.data.status && apiResponse.data.data) {
+                    console.log("Paystack verification successful (via direct API)");
+                    return apiResponse.data.data;
+                }
+            } catch (apiError) {
+                console.error("Direct API verification also failed:", apiError.message);
+            }
+            
+            return null;
+        }
+        
         // Check if response and data exist
         if (response && response.data) {
             console.log("Paystack verification successful");

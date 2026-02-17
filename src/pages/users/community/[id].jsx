@@ -317,14 +317,26 @@ export default function CommunityChat() {
 
     // Helper: format date for date separators
     const formatDateSeparator = (dateStr) => {
+        if (!dateStr) return "";
         const date = new Date(dateStr);
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
 
-        if (date.toDateString() === today.toDateString()) return "Today";
-        if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+        const dateOnly = date.toDateString();
+        const todayOnly = today.toDateString();
+        const yesterdayOnly = yesterday.toDateString();
+
+        if (dateOnly === todayOnly) return "Today";
+        if (dateOnly === yesterdayOnly) return "Yesterday";
         return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    };
+
+    // Helper: format time consistently
+    const formatTime = (dateStr) => {
+        if (!dateStr) return "";
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true });
     };
 
     // Helper: generate consistent color from name
@@ -567,7 +579,7 @@ export default function CommunityChat() {
                                         <div className={`text-[11px] mt-1 flex items-center gap-1 ${
                                             isMe ? 'justify-end text-white/70' : 'justify-end text-[#667781]'
                                         }`}>
-                                            <span>{new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span>{formatTime(post.createdAt)}</span>
                                             {isMe && <BsCheck2All className="text-white/80 text-sm" />}
                                         </div>
                                     </div>

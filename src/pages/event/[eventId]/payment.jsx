@@ -250,6 +250,14 @@ export default function Payment() {
                 body: JSON.stringify({ reference }),
             });
             
+            if (!response.ok) {
+                // Server error - show error and stay on payment page
+                showMessage("error", "Payment verification failed. Please try again or contact support.");
+                // Remove reference from URL to allow retry
+                router.replace(`/event/${event_id}/payment?type=${router.query.type || ''}`, undefined, { shallow: true });
+                return;
+            }
+            
             const data = await response.json();
             if (data.status === "success") {
                 shootConfetti();
@@ -259,11 +267,16 @@ export default function Payment() {
                 showMessage("error", "You are already registered for this event.");
                 setTimeout(() => router.push("/users/event-library"), 1500);
             } else {
-                showMessage("error", data.msg || "Payment verification failed.");
+                // Payment verification failed - show error and stay on payment page
+                showMessage("error", data.msg || "Payment verification failed. Please try again.");
+                // Remove reference from URL to allow retry
+                router.replace(`/event/${event_id}/payment?type=${router.query.type || ''}`, undefined, { shallow: true });
             }
         } catch (e) {
             console.error(e);
-            showMessage("error", "Network error occurred.");
+            showMessage("error", "Network error occurred. Please check your connection and try again.");
+            // Remove reference from URL to allow retry
+            router.replace(`/event/${event_id}/payment?type=${router.query.type || ''}`, undefined, { shallow: true });
         }
     };
 
