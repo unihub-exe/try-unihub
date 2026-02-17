@@ -89,11 +89,15 @@ const switchRole = async(req, res) => {
 
 const getAnnouncements = async(req, res) => {
     try {
+        // Ensure CORS headers are set
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        
         const announcements = await Announcement.find().sort({ createdAt: -1 });
-        res.status(200).send(announcements);
+        res.status(200).json(announcements);
     } catch (error) {
-        console.error(error);
-        res.status(500).send({ msg: "Error fetching announcements" });
+        console.error('Error fetching announcements:', error);
+        res.status(500).json({ msg: "Error fetching announcements" });
     }
 };
 
