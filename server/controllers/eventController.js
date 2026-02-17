@@ -420,8 +420,10 @@ const getUserEvents = async(req, res) => {
                 live.push(event);
             } else {
                 // Event has ended
-                // Only show past events if user was a participant (registered)
-                if (event.participants && event.participants.some(p => p.id === userId)) {
+                // Show past events if user was a participant (registered) OR is the owner
+                const isParticipant = event.participants && event.participants.some(p => p.id === userId);
+                const isOwner = event.ownerId === userId;
+                if (isParticipant || isOwner) {
                     past.push(event);
                 }
             }
