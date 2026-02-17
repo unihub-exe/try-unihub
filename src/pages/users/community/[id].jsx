@@ -645,6 +645,7 @@ export default function CommunityChat() {
                                     value={content}
                                     onChange={handleTextareaChange}
                                     placeholder="Message..."
+                                    inputMode="text"
                                     className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 py-2 max-h-[80px] sm:max-h-[100px] resize-none text-[14px] sm:text-[15px] leading-[18px] sm:leading-[20px]"
                                     rows="1"
                                     onKeyDown={(e) => {
@@ -657,6 +658,16 @@ export default function CommunityChat() {
                                 <button 
                                     className="p-1 text-gray-400 hover:text-gray-300 transition-colors flex-shrink-0"
                                     type="button"
+                                    onClick={() => {
+                                        if (textareaRef.current) {
+                                            textareaRef.current.focus();
+                                            // Trigger emoji keyboard on mobile devices
+                                            if (/Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                                textareaRef.current.click();
+                                            }
+                                        }
+                                    }}
+                                    title="Add emoji"
                                 >
                                     <FiSmile size={16} className="sm:w-[18px] sm:h-[18px]" />
                                 </button>

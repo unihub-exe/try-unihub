@@ -189,11 +189,29 @@ export default function EventChat({ eventId, eventName }) {
                         <form onSubmit={sendMessage} className="flex gap-2 items-center">
                             <input
                                 ref={inputRef}
+                                type="text"
+                                inputMode="text"
                                 className="flex-1 bg-gray-100 text-gray-800 border-0 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--secondary-color)] focus:bg-white transition-all placeholder:text-gray-400 font-medium"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder={replyTo ? "Type your reply..." : "Type a message..."}
                             />
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    if (inputRef.current) {
+                                        inputRef.current.focus();
+                                        // Trigger emoji keyboard on mobile devices
+                                        if (/Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                            inputRef.current.click();
+                                        }
+                                    }
+                                }}
+                                className="text-gray-500 hover:text-[color:var(--secondary-color)] p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                title="Add emoji"
+                            >
+                                😊
+                            </button>
                             <button 
                                 type="submit" 
                                 disabled={!input.trim()}
