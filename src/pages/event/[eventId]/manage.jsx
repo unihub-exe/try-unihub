@@ -668,8 +668,27 @@ export default function ManageEventPage() {
                         {activeTab === "checkin" && (
                             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 animate-fadeIn">
                                 <h2 className="text-2xl font-black text-gray-900 mb-6 pb-4 border-b border-gray-100 flex items-center gap-2">
-                                    <FiCheckSquare className="text-[color:var(--secondary-color)]" /> Manual Check-in
+                                    <FiCheckSquare className="text-[color:var(--secondary-color)]" /> Check-in
                                 </h2>
+                                
+                                {/* QR Scanner Section */}
+                                <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                        📱 QR Code Scanner
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        Scan attendee QR codes from their tickets to check them in instantly.
+                                    </p>
+                                    <button
+                                        onClick={() => router.push(`/event/${eventId}/scan`)}
+                                        className="px-6 py-3 bg-[color:var(--secondary-color)] text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                                    >
+                                        <FiCheckSquare /> Open QR Scanner
+                                    </button>
+                                </div>
+
+                                {/* Manual Check-in */}
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Manual Check-in</h3>
                                 {event.participants && event.participants.length > 0 ? (
                                     <div className="space-y-3">
                                         {event.participants.filter(p => !p.entry).map((p, i) => (

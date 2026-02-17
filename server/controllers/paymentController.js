@@ -626,7 +626,7 @@ const verifyWalletFunding = async(req, res) => {
 
             // Handle Premium Upgrade
             if (purpose === "premium_upgrade") {
-                const { event_id, days } = metadata;
+                const { event_id, days, event_name } = metadata;
                 
                 if (!event_id || !days) {
                     return res.status(400).send({ msg: "Missing event details in transaction" });
@@ -648,20 +648,52 @@ const verifyWalletFunding = async(req, res) => {
                     }
                 );
                 
+                // Get event details for notification
+                const event = await Event.findOne({ event_id });
+                
                 // Record transaction for organizer
-                await User.updateOne({ user_token }, {
-                    $push: {
-                        transactions: {
-                            type: "debit",
-                            amount: amount,
-                            description: `Premium Upgrade: ${days} days`,
-                            eventId: event_id,
-                            paymentReference: reference,
-                            date: new Date(),
-                            status: "completed"
-                        }
-                    }
+                const Transaction = require("../models/Transaction");
+                await Transaction.create({
+                    userId: user_token,
+                    type: 'premium_payment',
+                    amount: -amount,
+                    description: `Premium Upgrade - ${event_name || event?.name || 'Event'} (${days} days)`,
+                    eventId: event_id,
+                    eventName: event_name || event?.name,
+                    status: 'completed',
+                    reference: reference
                 });
+                
+                // Send notification
+                const { createNotification } = require("./notificationController");
+                await createNotification(
+                    user_token,
+                    'premium_upgrade',
+                    'Event Promoted to Premium! 🌟',
+                    `"${event_name || event?.name}" is now featured in Premium Picks for ${days} days. Your event will get maximum visibility!`,
+                    `/event/${event_id}/manage`
+                );
+                
+                // Send email
+                try {
+                    const user = await User.findOne({ user_token });
+                    if (user && user.email) {
+                        const { sendPremiumUpgradeEmail } = require("../utils/emailService");
+                        await sendPremiumUpgradeEmail({
+                            email: user.email,
+                            name: user.displayName || user.username,
+                            eventName: event_name || event?.name,
+                            days: parseInt(days),
+                            expiryDate: expiryDate.toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            })
+                        });
+                    }
+                } catch (emailError) {
+                    console.error("Error sending premium upgrade email:", emailError);
+                }
                 
                 // Return with redirect instruction
                 return res.send({ 
@@ -763,20 +795,17 @@ const verifyWalletFunding = async(req, res) => {
                 }
                 
                 console.log("Recording transaction");
-                // Record transaction
-                await User.updateOne({ user_token }, {
-                    $push: {
-                        transactions: {
-                            type: "debit",
-                            amount: amount,
-                            description: `Ticket: ${event.name}`,
-                            eventId: event_id,
-                            transactionId: reference,
-                            paymentReference: reference,
-                            date: new Date(),
-                            status: "completed"
-                        }
-                    }
+                // Record transaction with correct type
+                const Transaction = require("../models/Transaction");
+                await Transaction.create({
+                    userId: user_token,
+                    type: 'ticket_purchase',
+                    amount: -amount,
+                    description: `Ticket: ${event.name}`,
+                    eventId: event_id,
+                    eventName: event.name,
+                    status: 'completed',
+                    reference: reference
                 });
                 console.log("Transaction recorded");
                 
@@ -803,11 +832,11 @@ const verifyWalletFunding = async(req, res) => {
                 }
                 
                 // Add to organizer's wallet (locked balance)
-                if (event.organizer) {
+                if (event.ownerId) {
                     try {
                         const walletController = require("./walletController");
                         if (walletController.addTicketSale) {
-                            await walletController.addTicketSale(event.organizer, amount, event_id, event.name);
+                            await walletController.addTicketSale(event.ownerId, amount, event_id, event.name);
                             console.log("Added to organizer wallet");
                         }
                     } catch (walletError) {

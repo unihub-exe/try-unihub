@@ -672,6 +672,63 @@ async function sendReportActionEmail(reportData) {
   await sendEmail(email, 'Your Report Has Been Reviewed', html);
 }
 
+// Premium Upgrade Email
+async function sendPremiumUpgradeEmail({ email, name, eventName, days, expiryDate }) {
+  const html = `
+    ${emailStyles.container}
+    ${emailStyles.header}
+    ${emailStyles.content}
+      <h1 style="margin: 0 0 16px 0; font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.2;">
+        🌟 Your Event is Now Premium!
+      </h1>
+      <p style="margin: 0 0 24px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+        Hi ${name},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+        Great news! Your event "<strong>${eventName}</strong>" has been successfully promoted to Premium status.
+      </p>
+      
+      <div style="${emailStyles.highlightBox}">
+        <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #0f172a;">
+          Premium Benefits Active:
+        </h3>
+        <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 15px; line-height: 1.8;">
+          <li>⭐ Featured in Premium Picks section</li>
+          <li>📍 Top placement in search results</li>
+          <li>🎯 Highlighted with Premium badge</li>
+          <li>📧 Priority email notifications</li>
+          <li>🚀 Maximum visibility for ${days} days</li>
+        </ul>
+      </div>
+
+      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 8px;">
+        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+          <strong>Premium Duration:</strong> ${days} days<br>
+          <strong>Expires:</strong> ${expiryDate}
+        </p>
+      </div>
+
+      <p style="margin: 24px 0 0 0; color: #475569; font-size: 15px; line-height: 1.6;">
+        After the premium period ends, your event will automatically return to the regular listings (Upcoming or Live section based on event date).
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${process.env.CLIENT_URL || 'https://try-unihub.vercel.app'}/users/dashboard" 
+           style="${emailStyles.button}">
+          View Your Event
+        </a>
+      </div>
+
+      <p style="margin: 24px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+        Thank you for choosing UniHub Premium!
+      </p>
+    ${emailStyles.footer}
+    </div>
+  `;
+
+  await sendEmail(email, '🌟 Your Event is Now Premium!', html);
+}
+
 module.exports = {
   sendEmail,
   sendOTP: exports.sendOTP,
@@ -682,5 +739,6 @@ module.exports = {
   sendEventCancellationEmail,
   sendAccountSuspensionEmail,
   sendPayoutStatusEmail,
-  sendReportActionEmail
+  sendReportActionEmail,
+  sendPremiumUpgradeEmail
 };

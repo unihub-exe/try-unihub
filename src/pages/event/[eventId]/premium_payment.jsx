@@ -114,7 +114,8 @@ export default function PremiumPayment() {
                     metadata: {
                         event_id: event_id,
                         purpose: "premium_upgrade",
-                        days: days
+                        days: days,
+                        event_name: event.name
                     }
                 }),
             });
@@ -166,9 +167,15 @@ export default function PremiumPayment() {
             if (response.ok) {
                 // Clear the stored event_id
                 sessionStorage.removeItem('premium_event_id');
-                alert("Payment Successful! Your event is now Premium.");
-                // Redirect to dashboard instead of manage page
-                router.push('/users/dashboard');
+                sessionStorage.removeItem('premium_redirect');
+                
+                // Show success message
+                setMessage({ type: "success", text: "🎉 Congratulations! Your event is now Premium and will appear in Premium Picks!" });
+                
+                // Redirect to dashboard after 3 seconds
+                setTimeout(() => {
+                    router.push('/users/dashboard');
+                }, 3000);
             } else {
                 setError(data.msg || "Payment verification failed");
             }

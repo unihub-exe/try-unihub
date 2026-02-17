@@ -258,17 +258,12 @@ const CreateEvent = () => {
                 } catch (postErr) {}
 
                 setTimeout(() => {
-                    if (formData.isPremium) {
-                        // Redirect to premium payment if selected
-                        router.push(`/event/${data.event_id}/premium_payment`);
+                    // Check current route to determine where to redirect
+                    const isAdminRoute = router.pathname.startsWith('/admin');
+                    if (isAdminRoute && admin_id) {
+                        router.push("/admin/dashboard");
                     } else {
-                        // Check current route to determine where to redirect
-                        const isAdminRoute = router.pathname.startsWith('/admin');
-                        if (isAdminRoute && admin_id) {
-                            router.push("/admin/dashboard");
-                        } else {
-                            router.push("/users/dashboard");
-                        }
+                        router.push("/users/dashboard");
                     }
                 }, 3000);
             } else {
@@ -544,18 +539,7 @@ const CreateEvent = () => {
                     })
                 }
                 className="w-5 h-5 rounded text-[color:var(--secondary-color)] focus:ring-[color:var(--secondary-color)]"/><span className="text-sm text-gray-700" >
-                Enable waitlist when sold out </span></label><label className="flex items-center gap-3 cursor-pointer bg-yellow-50 p-3 rounded-lg border border-yellow-200" ><input type="checkbox"
-                checked={ formData.isPremium }
-                onChange={
-                    (e) =>
-                    setFormData({
-                        ...formData,
-                        isPremium: e.target.checked,
-                    })
-                }
-                className="w-5 h-5 rounded text-yellow-500 focus:ring-yellow-500"/><div ><span className="block text-sm font-bold text-gray-900" >
-                Promote this Event(Premium) </span><span className="text-xs text-gray-600" >
-                Your event will be highlighted and appear at the top of feeds. </span></div></label></div></div></div></div>
+                Enable waitlist when sold out </span></label></div></div></div></div>
             )
         }
 
