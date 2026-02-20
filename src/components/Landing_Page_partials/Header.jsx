@@ -53,7 +53,9 @@ function Header() {
               </a>
               <Link
                 href="/users/signup"
-                className="px-5 py-2.5 rounded-xl text-white font-bold bg-[color:var(--secondary-color)] hover:bg-[color:var(--darker-secondary-color)] transition-colors shadow-lg shadow-blue-200/50"
+                tabIndex={-1}
+                aria-disabled="true"
+                className="pointer-events-none px-5 py-2.5 rounded-xl text-white font-bold bg-[color:var(--secondary-color)] hover:bg-[color:var(--darker-secondary-color)] transition-colors shadow-lg shadow-blue-200/50"
               >
                 Try UniHub
               </Link>
