@@ -29,7 +29,9 @@ function HeroHome() {
                 <div className="flex flex-col sm:flex-row gap-4">
                    <Link
                       href="/users/signup"
-                      className="px-8 py-4 rounded-xl bg-gray-900 text-white font-bold text-lg hover:bg-black transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
+                      tabIndex={-1}
+                      aria-disabled="true"
+                      className="pointer-events-none px-8 py-4 rounded-xl bg-gray-900 text-white font-bold text-lg hover:bg-black transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
                    >
                       Try UniHub
                       <FiArrowRight />
